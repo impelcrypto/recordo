@@ -97,7 +97,8 @@ final class AppModel: ObservableObject {
 
     @discardableResult
     private func presentQuiz(now: Date) -> Bool {
-        let questions = QuizSession.questions(from: deck, now: now)
+        let count = UserDefaults.standard.integer(forKey: SettingsKey.quizCount)
+        let questions = QuizSession.questions(from: deck, now: now, limit: min(max(count, 1), 10))
         guard !questions.isEmpty else { return false }
         deck.lastShownAt = now
         save()

@@ -6,6 +6,7 @@ struct QuizView: View {
     let onSize: (CGSize) -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var scrollTarget: String?
+    @State private var confettiVisible = false
 
     var body: some View {
         QuizPanelFrame(scrollTarget: scrollTarget) {
@@ -22,6 +23,15 @@ struct QuizView: View {
                 .transition(questionTransition)
         } actions: {
             footer
+        }
+        .overlay { if confettiVisible { QuizConfetti() } }
+        .onChange(of: session.verdict) { _, verdict in
+            guard verdict != nil, session.isLast, !reduceMotion else { return }
+            confettiVisible = true
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(2.2))
+                confettiVisible = false
+            }
         }
         .quizSurface(onSize: onSize)
         .accessibilityElement(children: .contain)

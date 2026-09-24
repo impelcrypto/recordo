@@ -368,12 +368,38 @@
     quiz.pickedKey = key;
     quiz.discarded = false;
     revealAnswer();
+    celebrateIfLast();
+  }
+  // Once, on answering the last question, whatever the result: a completion mark, not a score.
+  function celebrateIfLast(){
+    var panel = stage.querySelector('.quiz-panel');
+    if(!panel || model.motion === 'reduce' || quiz.qIndex < 3 || !quiz.verdict) return;
+    var layer = document.createElement('div');
+    layer.className = 'confetti-layer';
+    layer.setAttribute('aria-hidden', 'true');
+    panel.appendChild(layer);
+    var colors = ['var(--secondary)', 'var(--success)', 'var(--tertiary)'];
+    var height = panel.clientHeight;
+    for(var i = 0; i < 28; i++){
+      var piece = document.createElement('i');
+      piece.className = 'confetti-piece';
+      piece.style.left = (Math.random() * 100) + '%';
+      piece.style.background = colors[i % colors.length];
+      layer.appendChild(piece);
+      var spin = (Math.random() * 1080 - 540);
+      piece.animate([
+        { transform:'translate(-50%, -24px) rotate(0deg)', opacity:1 },
+        { transform:'translate(-50%, ' + (height + 24) + 'px) rotate(' + spin + 'deg)', opacity:0 }
+      ], { duration:1800, delay:Math.random() * 400, easing:'ease-in', fill:'both' });
+    }
+    setTimeout(function(){ layer.remove(); }, 2200);
   }
   function pickIdk(){
     quiz.verdict = 'idk';
     quiz.pickedKey = null;
     quiz.discarded = false;
     revealAnswer();
+    celebrateIfLast();
   }
 
   // Discard/undo (spec #6): the leading control crossfades in place, ~150ms total.
@@ -463,7 +489,7 @@
   ctlTheme.addEventListener('change', function(){ model.theme = ctlTheme.value; render(false); });
   ctlText.addEventListener('change', function(){ model.text = ctlText.value; render(false); });
   ctlMotion.addEventListener('change', function(){ model.motion = ctlMotion.value; render(false); });
-  ctlReplay.addEventListener('click', function(){ render(true); });
+  ctlReplay.addEventListener('click', function(){ render(true); celebrateIfLast(); });
 
   document.addEventListener('keydown', function(e){
     if(e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -501,4 +527,5 @@
 
   applyState(qs.get('state') || 'question');
   render(true);
+  celebrateIfLast();
 })();

@@ -310,3 +310,42 @@ private struct QuizOptionButtonStyle: ButtonStyle {
             .animation(QuizMotion.press(reduceMotion), value: configuration.isPressed)
     }
 }
+
+// MARK: - Confetti
+
+/// Falls once over the panel after the last answer; the caller skips it under Reduce Motion.
+/// ponytail: 28 animated rectangles, no particle system for a two-second mark.
+struct QuizConfetti: View {
+    private struct Piece {
+        let x: CGFloat
+        let delay: Double
+        let color: Color
+        let spin: Double
+    }
+
+    @State private var pieces = (0..<28).map { index in
+        Piece(x: .random(in: 0...1), delay: .random(in: 0...0.4),
+              color: [Theme.secondary, Theme.success, Theme.tertiary][index % 3], spin: .random(in: -540...540))
+    }
+    @State private var fallen = false
+
+    var body: some View {
+        GeometryReader { geometry in
+            ForEach(Array(pieces.enumerated()), id: \.offset) { _, piece in
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(piece.color)
+                    .frame(width: 4, height: 8)
+                    .rotationEffect(.degrees(fallen ? piece.spin : 0))
+                    .position(x: piece.x * geometry.size.width, y: fallen ? geometry.size.height + 24 : -24)
+                    .opacity(fallen ? 0 : 1)
+                    .animation(.easeIn(duration: 1.8).delay(piece.delay), value: fallen)
+            }
+        }
+        // The window's transparent title bar strip sits above the panel; pieces must not fall through it.
+        .clipped()
+        .opacity(0.6)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onAppear { fallen = true }
+    }
+}

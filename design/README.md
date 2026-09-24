@@ -2,7 +2,7 @@
 
 ## 出題の小窓・メニュー・設定：承認済み（2026-09-23）
 
-以前作った別のアプリのクイズpopupのトークン・構造・motionを流用したRecordoの静的HTMLモック。Swift の実装は計画2（`docs/superpowers/plans/2026-09-23-recordo-ui.md`）で作った。英語の文言と、設定の「言語」と「外観」の行はモックにない。設定ウィンドウは、モックの1枚のフォームから、左にサイドバーがある形に変えた（2026-09-23）。サイドバーの一番下の「情報（About）」は、ユーザーの指示でモックを作らなかった（2026-09-24）。同じ日に、サイドバーを全幅のタイトルバーの下に置き、見出し付きのセクションに分けた。
+以前作った別のアプリのクイズpopupのトークン・構造・motionを流用したRecordoの静的HTMLモック。Swift の実装は計画2（`docs/superpowers/plans/2026-09-23-recordo-ui.md`）で作った。英語の文言と、設定の「言語」と「外観」の行はモックにない。設定ウィンドウは、モックの1枚のフォームから、左にサイドバーがある形に変えた（2026-09-23）。サイドバーの一番下の「情報（About）」は、ユーザーの指示でモックを作らなかった（2026-09-24）。同じ日に、最後の問題に答えたときの花吹雪と、設定の「1回の問題数」（1〜10問、既定3問）をモックに足して承認を得た。花吹雪の値は以前作った別のアプリの完了時の花吹雪に合わせた。同じ日に、サイドバーを全幅のタイトルバーの下に置き、見出し付きのセクションに分けた。
 
 - [操作モック（apple-quiz.html）](sessions/quiz/apple-quiz.html)
 - [仕様書（apple-quiz-spec.md）](sessions/quiz/apple-quiz-spec.md)
@@ -15,7 +15,7 @@
 - [wrong](sessions/quiz/apple-quiz.html?state=wrong&theme=light&text=100) — Cを選んで不正解
 - [idk](sessions/quiz/apple-quiz.html?state=idk&theme=light&text=100) — 「分からない」
 - [discarded](sessions/quiz/apple-quiz.html?state=discarded&theme=light&text=100) — 不正解後にカードを捨てた
-- [last](sessions/quiz/apple-quiz.html?state=last&theme=light&text=100) — 3問目を正解（primaryが「閉じる」）
+- [last](sessions/quiz/apple-quiz.html?state=last&theme=light&text=100) — 3問目を正解（primaryが「閉じる」）。答えた瞬間に花吹雪が一度降る（「もう一度再生」で再生し直せる）
 - [empty-none](sessions/quiz/apple-quiz.html?state=empty-none&theme=light&text=100) — カードが1枚もない
 - [empty-due](sessions/quiz/apple-quiz.html?state=empty-due&theme=light&text=100) — 該当日時のカードがない
 - [empty-broken](sessions/quiz/apple-quiz.html?state=empty-broken&theme=light&text=100) — cards.jsonが読めない

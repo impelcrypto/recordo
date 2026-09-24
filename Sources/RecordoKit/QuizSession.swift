@@ -83,7 +83,7 @@ final class QuizSession: ObservableObject {
         onDiscard(current.cardID)
     }
 
-    static func questions(from deck: Deck, now: Date, limit: Int = 3) -> [QuizQuestion] {
+    static func questions(from deck: Deck, now: Date, limit: Int) -> [QuizQuestion] {
         let due = deck.cards.filter { $0.due <= now }.sorted { $0.due < $1.due }
         return Array(due.lazy.compactMap { card -> QuizQuestion? in
             let wrong = Distractors.pick(for: card, from: deck.cards)
