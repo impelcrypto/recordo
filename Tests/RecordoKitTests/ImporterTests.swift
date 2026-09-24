@@ -122,6 +122,23 @@ final class ImporterTests: XCTestCase {
         XCTAssertEqual(saved.cards[0].definition, "最初の定義")
     }
 
+    func testCardsAreWrittenInTheAppLanguage() async throws {
+        try writeHistory([("/term bar-cache", nowMs - 1000)])
+        useLanguage(.english)
+        let english = FakeClaudeRunner([#"{"cards":[]}"#])
+        _ = try await importer(english).sync()
+        // The first sync moved the cursor past the question, so start the second from an empty deck.
+        try FileManager.default.removeItem(at: store.url)
+        useLanguage(.japanese)
+        let japanese = FakeClaudeRunner([#"{"cards":[]}"#])
+        _ = try await importer(japanese).sync()
+
+        XCTAssertTrue(english.prompts[0].contains("英語で120字以内"))
+        XCTAssertTrue(english.prompts[0].contains("差を20字以内"))
+        XCTAssertTrue(japanese.prompts[0].contains("日本語で60字以内"))
+        XCTAssertTrue(japanese.prompts[0].contains("差を10字以内"))
+    }
+
     func testTermCommandsSkipTheJudgement() async throws {
         try writeHistory([("/term bar-cache", nowMs - 1000)])
         let generate = #"{"cards":[{"id":0,"skip":false,"term":"bar-cache","definition":"一時保存の層","tags":["web"],"distractors":["a","b","c"]}]}"#

@@ -77,7 +77,9 @@ final class Importer {
         var changed = 0
         for start in stride(from: 0, to: questions.count, by: batchSize) {
             let batch = Array(questions[start..<min(start + batchSize, questions.count)])
-            let data = try await runner.run(prompt: Prompts.generate(batch, tags: deck.allTags),
+            // Read per batch, so switching the language during a long sync applies from the next batch.
+            let data = try await runner.run(prompt: Prompts.generate(batch, tags: deck.allTags,
+                                                                     japanese: AppLanguage.current.isJapanese),
                                             schema: Prompts.generateSchema)
             for card in try decode(Prompts.GenerateResponse.self, data).cards {
                 guard !card.skip, batch.contains(where: { $0.id == card.id }),

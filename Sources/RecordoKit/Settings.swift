@@ -22,18 +22,18 @@ enum SettingsKey {
     }
 }
 
-/// Language of the app's own words; card terms and definitions stay as claude wrote them.
+/// Language of the app's own words and of new card definitions; existing cards stay as claude wrote them.
 enum AppLanguage: String {
     case system
     case japanese = "ja"
     case english = "en"
 
     // Read at call time, so AppKit code and static helpers follow Settings without a SwiftUI environment.
-    fileprivate static var current: AppLanguage {
+    static var current: AppLanguage {
         AppLanguage(rawValue: UserDefaults.standard.string(forKey: SettingsKey.language) ?? "") ?? .japanese
     }
 
-    fileprivate var isJapanese: Bool {
+    var isJapanese: Bool {
         switch self {
         case .japanese: return true
         case .english: return false
