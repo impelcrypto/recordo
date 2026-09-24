@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">Recordo app icon, direction A</title>
+  <desc id="description">A stack of ivory flashcards beneath a brass recall loop on a deep ink-teal leather tile.</desc>
+
+  <defs>
+    <linearGradient id="leather" x1="196" y1="118" x2="838" y2="918" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#29474B"/>
+      <stop offset="0.48" stop-color="#192D32"/>
+      <stop offset="1" stop-color="#101A20"/>
+    </linearGradient>
+    <radialGradient id="warmth" cx="0" cy="0" r="1" gradientTransform="translate(512 420) rotate(90) scale(438)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B47C45" stop-opacity="0.29"/>
+      <stop offset="0.52" stop-color="#5A705C" stop-opacity="0.13"/>
+      <stop offset="1" stop-color="#101A20" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="brass" x1="392" y1="275" x2="661" y2="492" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFE2A2"/>
+      <stop offset="0.28" stop-color="#FFB354"/>
+      <stop offset="0.7" stop-color="#D5793D"/>
+      <stop offset="1" stop-color="#9D482C"/>
+    </linearGradient>
+    <linearGradient id="card" x1="376" y1="475" x2="650" y2="748" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFDF7"/>
+      <stop offset="0.6" stop-color="#F5ECDD"/>
+      <stop offset="1" stop-color="#DCC8AC"/>
+    </linearGradient>
+    <linearGradient id="cardBack" x1="345" y1="480" x2="713" y2="730" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F6EBD9"/>
+      <stop offset="1" stop-color="#C9AC88"/>
+    </linearGradient>
+    <filter id="tileShadow" x="32" y="36" width="960" height="968" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="22" stdDeviation="26" flood-color="#090609" flood-opacity="0.44"/>
+    </filter>
+    <filter id="markShadow" x="236" y="218" width="552" height="590" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#090609" flood-opacity="0.38"/>
+    </filter>
+    <filter id="brassGlow" x="264" y="218" width="516" height="314" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="7" stdDeviation="9" flood-color="#F09A49" flood-opacity="0.22"/>
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#090609" flood-opacity="0.32"/>
+    </filter>
+    <clipPath id="tileClip"><rect x="82" y="82" width="860" height="860" rx="208"/></clipPath>
+  </defs>
+
+  <g filter="url(#tileShadow)"><rect x="82" y="82" width="860" height="860" rx="208" fill="url(#leather)"/></g>
+  <g clip-path="url(#tileClip)">
+    <rect x="82" y="82" width="860" height="860" fill="url(#warmth)"/>
+    <ellipse cx="512" cy="798" rx="292" ry="92" fill="#080E11" opacity="0.2"/>
+    <path d="M122 218C282 126 468 100 640 127C760 146 853 189 928 251" fill="none" stroke="#FFFFFF" stroke-opacity="0.055" stroke-width="16" stroke-linecap="round"/>
+  </g>
+  <rect x="83.5" y="83.5" width="857" height="857" rx="206.5" fill="none" stroke="#FFE0AE" stroke-opacity="0.13" stroke-width="3"/>
+  <rect x="102" y="102" width="820" height="820" rx="190" fill="none" stroke="#080608" stroke-opacity="0.31" stroke-width="4"/>
+
+  <g filter="url(#brassGlow)">
+    <path d="M321 425C341 328 424 267 526 267C614 267 687 306 714 361L758 345L739 423L669 399L696 379C666 334 604 309 526 309C446 309 380 356 362 433C358 451 326 447 321 425Z" fill="url(#brass)"/>
+    <path d="M330 411C356 330 430 282 523 282" fill="none" stroke="#FFF1C9" stroke-opacity="0.34" stroke-width="7" stroke-linecap="round"/>
+  </g>
+
+  <g filter="url(#markShadow)">
+    <rect x="327" y="479" width="344" height="244" rx="25" transform="rotate(-9 499 601)" fill="url(#cardBack)" stroke="#FFF8E9" stroke-opacity="0.58" stroke-width="5"/>
+    <rect x="354" y="479" width="344" height="244" rx="25" transform="rotate(8 526 601)" fill="url(#cardBack)" stroke="#FFF8E9" stroke-opacity="0.58" stroke-width="5"/>
+    <rect x="336" y="498" width="352" height="245" rx="27" fill="url(#card)" stroke="#FFFDF5" stroke-opacity="0.74" stroke-width="6"/>
+    <path d="M365 510H658" fill="none" stroke="#FFFFFF" stroke-opacity="0.48" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <path d="M350 750C444 774 585 774 676 750" fill="none" stroke="#090709" stroke-opacity="0.16" stroke-width="18" stroke-linecap="round"/>
+</svg>

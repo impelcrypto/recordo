@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; media-src 'none'; object-src 'none'">
+<title>Recordo · カード一覧</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="apple-cards.css">
+<script src="apple-cards.js" defer></script>
+</head>
+<body>
+<svg class="symbols" aria-hidden="true"><defs>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m16 16 5 5"></path></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"></path></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"></path></symbol>
+</defs></svg>
+
+<header class="fixture-bar">
+  <div class="fixture-title"><strong>Recordo / カード一覧</strong><span>方向確認モック · 架空のカード</span></div>
+  <div class="fixture-controls">
+    <label>State <select id="ctl-state">
+      <option value="normal">normal</option>
+      <option value="search">search</option>
+      <option value="no-match">no-match</option>
+      <option value="empty">empty</option>
+      <option value="syncing">syncing</option>
+      <option value="unreadable">unreadable</option>
+      <option value="confirm">confirm</option>
+      <option value="many">many</option>
+    </select></label>
+    <label>Page <select id="ctl-page"></select></label>
+    <label>Theme <select id="ctl-theme"><option value="light">Light</option><option value="dark">Dark</option></select></label>
+    <label>Text <select id="ctl-text"><option value="100">100%</option><option value="200">200%</option></select></label>
+    <label>Motion <select id="ctl-motion"><option value="full">Full</option><option value="reduce">Reduce</option></select></label>
+    <label>Lang <select id="ctl-lang"><option value="ja">日本語</option><option value="en">English</option></select></label>
+    <button id="ctl-reset" type="button">Reset</button>
+  </div>
+</header>
+
+<div id="desktop" class="desktop" data-theme="light" data-text="100" data-motion="full">
+  <div class="desktop-surface">
+    <section id="win" class="cards-window" aria-labelledby="page-title">
+      <div class="titlebar" aria-hidden="true"><span class="traffic"><i></i><i></i><i></i></span></div>
+      <div id="scroll" class="cards-scroll">
+        <div class="cards-head">
+          <div class="col">
+            <div class="title-row">
+              <h1 id="page-title" tabindex="-1"></h1>
+              <span id="total" class="total"></span>
+            </div>
+            <div id="search-field" class="search-field">
+              <svg aria-hidden="true"><use href="#i-search"></use></svg>
+              <input id="search" type="text" autocomplete="off" spellcheck="false">
+              <button id="search-clear" class="search-clear" type="button" hidden><svg aria-hidden="true"><use href="#i-x"></use></svg></button>
+            </div>
+            <p id="sync-note" class="sync-note" hidden><span class="spinner" aria-hidden="true"></span><span data-slot="text"></span></p>
+          </div>
+        </div>
+        <div id="body" class="col cards-body"></div>
+        <nav id="pager" class="col" hidden>
+          <div class="pager" data-flip="pager">
+            <button id="page-prev" class="pager-btn" type="button"></button>
+            <span id="page-label" class="pager-label"></span>
+            <button id="page-next" class="pager-btn" type="button"></button>
+          </div>
+        </nav>
+      </div>
+      <div id="scrim" class="sheet-scrim" hidden></div>
+      <div id="alert" class="alert" role="alertdialog" aria-modal="true" aria-labelledby="alert-title" aria-describedby="alert-msg" hidden>
+        <img class="alert-icon" src="../../../assets/AppIcon.svg" alt="">
+        <p id="alert-title" class="alert-title"></p>
+        <p id="alert-msg" class="alert-msg"></p>
+        <div class="alert-buttons">
+          <button id="alert-discard" class="alert-btn destructive" type="button"></button>
+          <button id="alert-cancel" class="alert-btn default" type="button"></button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="menubar" aria-hidden="true">
+    <span class="menubar-clock">19:42</span>
+    <span class="menubar-icon"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="14" height="10" rx="2"></rect><path d="M7 9V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"></path></svg></span>
+  </div>
+</div>
+</body>
+</html>

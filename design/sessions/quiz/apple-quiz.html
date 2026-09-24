@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; media-src 'none'; object-src 'none'">
+<title>Recordo · 出題の小窓・メニュー・設定</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="apple-quiz.css">
+<script src="apple-quiz.js" defer></script>
+</head>
+<body>
+<header class="fixture-bar">
+  <div class="fixture-title"><strong>Recordo / 出題の小窓・メニュー・設定</strong><span>方向確認モック</span></div>
+  <div class="fixture-controls">
+    <label>State <select id="ctl-state">
+      <option value="question">question</option>
+      <option value="correct">correct</option>
+      <option value="wrong">wrong</option>
+      <option value="idk">idk</option>
+      <option value="discarded">discarded</option>
+      <option value="last">last</option>
+      <option value="empty-none">empty-none</option>
+      <option value="empty-due">empty-due</option>
+      <option value="empty-broken">empty-broken</option>
+      <option value="menu">menu</option>
+      <option value="menu-syncing">menu-syncing</option>
+      <option value="menu-failed">menu-failed</option>
+      <option value="settings">settings</option>
+    </select></label>
+    <label>Theme <select id="ctl-theme"><option value="light">Light</option><option value="dark">Dark</option></select></label>
+    <label>Text <select id="ctl-text"><option value="100">100%</option><option value="200">200%</option></select></label>
+    <label>Motion <select id="ctl-motion"><option value="full">Full</option><option value="reduce">Reduce</option></select></label>
+    <button id="ctl-replay">もう一度再生</button>
+  </div>
+</header>
+
+<div id="desktop" class="desktop" data-theme="light" data-text="100" data-motion="full">
+  <div class="desktop-surface">
+    <div class="fake-window" aria-hidden="true">
+      <div class="fake-window-bar"><i></i><i></i><i></i></div>
+      <div class="fake-window-body">
+        <div class="fake-window-line"></div>
+        <div class="fake-window-line"></div>
+        <div class="fake-window-line"></div>
+        <div class="fake-window-line"></div>
+      </div>
+    </div>
+    <div id="stage"></div>
+  </div>
+  <div class="menubar">
+    <span class="menubar-clock">19:42</span>
+    <button id="menubar-icon" class="menubar-icon" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Recordo">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="9" width="14" height="10" rx="2"></rect><path d="M7 9V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"></path></svg>
+    </button>
+  </div>
+</div>
+
+<template id="tpl-question">
+  <aside class="quiz-panel" role="dialog" aria-modal="false" aria-label="Recordo 出題">
+    <div class="quiz-header">
+      <span class="quiz-title" data-slot="counter"></span>
+      <button type="button" class="quiz-close" data-action="close" aria-label="閉じる">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      </button>
+    </div>
+    <div class="quiz-body">
+      <div class="quiz-body-inner" data-slot="body-inner">
+        <p class="quiz-meta" data-slot="meta"></p>
+        <h2 class="quiz-question" data-slot="term"></h2>
+        <div class="options" data-slot="options" role="group" aria-label="選択肢"></div>
+        <button type="button" class="dontknow" data-action="idk">分からない</button>
+      </div>
+    </div>
+    <div class="quiz-footer">
+      <div class="quiz-verdict" data-slot="verdict" hidden></div>
+      <div class="quiz-actions">
+        <span class="quiz-actions-leading" data-slot="leading"></span>
+        <button type="button" class="btn-primary" data-action="primary" hidden>
+          <span data-slot="primary-label"></span><span class="key-space" aria-hidden="true">␣</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+</template>
+
+<template id="tpl-notice">
+  <aside class="quiz-panel" role="dialog" aria-modal="false" aria-label="Recordo 出題">
+    <div class="quiz-header">
+      <span class="quiz-title">Recordo</span>
+      <button type="button" class="quiz-close" data-action="close" aria-label="閉じる">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      </button>
+    </div>
+    <div class="quiz-body">
+      <p class="notice-title" data-slot="title"></p>
+      <p class="notice-body" data-slot="body"></p>
+    </div>
+    <div class="quiz-actions" data-slot="actions"></div>
+  </aside>
+</template>
+
+<template id="tpl-menu">
+  <div class="menu-dropdown" role="menu" aria-label="Recordo メニュー"></div>
+</template>
+
+<template id="tpl-settings">
+  <section class="settings-window" role="dialog" aria-label="Recordo 設定">
+    <div class="settings-titlebar">
+      <span class="settings-traffic"><i></i><i></i><i></i></span>
+      <span class="settings-title">Recordo 設定</span>
+    </div>
+    <div class="settings-body">
+      <div class="settings-group">
+        <div class="settings-row">
+          <span class="settings-row-label">出題の間隔</span>
+          <span class="settings-row-control">
+            <button type="button" class="popup-button" aria-haspopup="listbox">3 時間<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+          </span>
+        </div>
+        <div class="settings-row">
+          <span class="settings-row-label">静かな時間帯</span>
+          <span class="settings-row-control">
+            <input type="text" class="time-field" value="22:00" aria-label="静かな時間帯の開始"><span class="time-sep">〜</span><input type="text" class="time-field" value="9:00" aria-label="静かな時間帯の終了">
+            <button type="button" class="switch" role="switch" aria-checked="true" aria-label="静かな時間帯"></button>
+          </span>
+        </div>
+        <div class="settings-fieldrow">
+          <label class="settings-row-label" for="claude-path" style="display:block;margin-bottom:.6em">claude の場所</label>
+          <input id="claude-path" type="text" class="text-field" placeholder="自動で探す">
+          <p class="settings-help">見つかりました：~/.nvm/versions/node/v24/bin/claude</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</template>
+
+</body>
+</html>

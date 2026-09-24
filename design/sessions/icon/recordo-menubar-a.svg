@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" role="img" aria-labelledby="title description">
+  <title id="title">Recordo menu bar icon, direction A</title>
+  <desc id="description">A recall loop above a stack of flashcards.</desc>
+
+  <path d="M3.3 6.5C3.75 3.25 6.17 1.25 9.3 1.25C11.75 1.25 13.74 2.45 14.7 4.4L16 3.3L15.25 7.2L11.45 6.1L12.8 5C12.14 3.74 10.88 3 9.2 3C7.08 3 5.35 4.45 5.05 6.65C4.9 7.75 3.15 7.7 3.3 6.5Z" fill="#000000"/>
+  <g fill="none" stroke="#000000" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5.2 8.5H13.95C14.7 8.5 15.2 9 15.2 9.75V13.7"/>
+    <path d="M3.65 10H12.9C13.6 10 14.1 10.5 14.1 11.2V15.4H3.65C3 15.4 2.55 14.95 2.55 14.3V11.1C2.55 10.45 3 10 3.65 10Z"/>
+  </g>
+</svg>
