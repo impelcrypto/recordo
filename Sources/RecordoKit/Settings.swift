@@ -30,7 +30,7 @@ enum AppLanguage: String {
 
     // Read at call time, so AppKit code and static helpers follow Settings without a SwiftUI environment.
     static var current: AppLanguage {
-        AppLanguage(rawValue: UserDefaults.standard.string(forKey: SettingsKey.language) ?? "") ?? .japanese
+        AppLanguage(rawValue: UserDefaults.standard.string(forKey: SettingsKey.language) ?? "") ?? .system
     }
 
     var isJapanese: Bool {
@@ -75,7 +75,7 @@ func tr(_ ja: String, _ en: String) -> String {
 }
 
 struct SettingsView: View {
-    @AppStorage(SettingsKey.language) private var language = AppLanguage.japanese
+    @AppStorage(SettingsKey.language) private var language = AppLanguage.system
     @State private var pane: SettingsPane? = .general
 
     var body: some View {
@@ -170,7 +170,7 @@ private struct SidebarRow: View {
 }
 
 private struct GeneralPane: View {
-    @AppStorage(SettingsKey.language) private var language = AppLanguage.japanese
+    @AppStorage(SettingsKey.language) private var language = AppLanguage.system
     @AppStorage(SettingsKey.appearance) private var appearance = AppAppearance.system
     @AppStorage(SettingsKey.cardsShortcut) private var cardsShortcut = Hotkey.cardsDefault.stored
 

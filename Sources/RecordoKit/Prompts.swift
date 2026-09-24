@@ -33,12 +33,12 @@ enum Prompts {
         let items = questions.map { question in
             "### id \(question.id)\n質問: \(question.question)\n聞かれている用語: \(question.term)\n会話:\n\(question.context ?? "（会話の記録なし）")"
         }.joined(separator: "\n\n")
-        // English letters are about half as wide, so doubling the counts keeps the options the same size in the panel.
+        // An option holds about 35 English letters a line, so 90 keeps each one to about three lines in the panel.
         let definition = japanese
             ? "その会話の文脈での意味を日本語で60字以内。用語そのものは定義に書かない。「〜ではない」のような否定から始めない。いくつか並べるときは「・」でなく「と」や「や」でつなぐ"
-            : "その会話の文脈での意味を英語で120字以内。用語そのものは定義に書かない。「Not ...」のような否定から始めない"
+            : "その会話の文脈での意味を英語で90字以内。用語そのものは定義に書かない。「Not ...」のような否定から始めない"
         let language = japanese ? "" : "英語で"
-        let gap = japanese ? 10 : 20
+        let gap = japanese ? 10 : 15
         let stop = japanese ? "句点" : "ピリオド"
         return """
         Claude Code で作業中に聞かれた用語の復習カードを作ります。各項目の質問と、その質問をしたときの会話を読み、次を返してください。

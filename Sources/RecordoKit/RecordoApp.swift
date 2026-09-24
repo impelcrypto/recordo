@@ -31,8 +31,10 @@ private struct RecordoApp: App {
     @ObservedObject private var model = AppModel.shared
 
     var body: some Scene {
-        MenuBarExtra("Recordo", systemImage: "rectangle.stack") {
+        MenuBarExtra {
             MenuContent(model: model)
+        } label: {
+            MenuBarLabel(percent: model.syncPercent)
         }
         .menuBarExtraStyle(.menu)
         Settings {
@@ -55,11 +57,26 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
+// The first sync runs about half an hour, so its progress sits beside the icon instead of only inside the menu.
+private struct MenuBarLabel: View {
+    let percent: Int?
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "rectangle.stack")
+                .accessibilityLabel(Text(verbatim: "Recordo"))
+            if let percent {
+                Text(verbatim: "\(percent)%")
+            }
+        }
+    }
+}
+
 private struct MenuContent: View {
     @ObservedObject var model: AppModel
     @Environment(\.openSettings) private var openSettings
     @AppStorage(SettingsKey.cardsShortcut) private var cardsShortcut = Hotkey.cardsDefault.stored
-    @AppStorage(SettingsKey.language) private var language = AppLanguage.japanese
+    @AppStorage(SettingsKey.language) private var language = AppLanguage.system
 
     var body: some View {
         // Reading the language here is what rebuilds the menu when Settings changes it.
@@ -68,7 +85,9 @@ private struct MenuContent: View {
                 .disabled(model.isSyncing)
             switch model.syncState {
             case let .syncing(done, total):
-                Text(total > 0 ? tr("同期中 \(done)/\(total)", "Syncing \(done)/\(total)") : tr("同期の準備中…", "Preparing to sync…"))
+                Text(total > 0
+                     ? tr("同期中 \(AppModel.syncPercent(done: done, total: total))%", "Syncing \(AppModel.syncPercent(done: done, total: total))%")
+                     : tr("同期の準備中…", "Preparing to sync…"))
             case .idle, .failed:
                 Button(tr("同期", "Sync")) { model.sync() }
                     .disabled(model.panelVisible)

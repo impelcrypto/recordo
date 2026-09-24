@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recordo · Remember the terms you look up in Claude Code</title>
+<meta name="description" content="Recordo is a macOS menu bar app that turns the terms you ask Claude Code about into four-choice quizzes, then asks you again as you start to forget.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Recordo">
+<meta property="og:description" content="A macOS menu bar app that quizzes you on the terms you asked Claude Code about.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+/* Colors come from Sources/RecordoKit/Theme.swift, so the mockups match the app. */
+:root {
+  color-scheme: light dark;
+  --bg: #fff; --bg-alt: #f5f5f7; --surface: #fff; --tile: #f5f5f7;
+  --text: #1d1d1f; --secondary: #68686d; --line: #dedee3;
+  --link: #0068d9; --action: #0068d9; --accent: #b45f2b;
+  --window: #fff; --inset: #f5f5f7; --success: #267843; --correct-face: #edf7f0;
+  --sans: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --spring: cubic-bezier(.22, 1, .36, 1);
+  --pop: cubic-bezier(.34, 1.56, .64, 1);
+  /* The app icon's leather tile, used as the desktop wallpaper in both color schemes. */
+  --wall: radial-gradient(70% 60% at 28% 18%, rgba(174, 112, 75, .38), transparent 70%),
+          radial-gradient(60% 60% at 88% 92%, rgba(100, 96, 124, .35), transparent 70%),
+          linear-gradient(155deg, #303b58, #20283f 48%, #111622);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000; --bg-alt: #101012; --surface: #1c1c1e; --tile: #1c1c1e;
+    --text: #f5f5f7; --secondary: #b5b5bb; --line: #454549;
+    --link: #2997ff; --action: #0071e3; --accent: #ffb354;
+    --window: #1c1c1e; --inset: #2c2c2e; --success: #79d794; --correct-face: #173c29;
+  }
+}
+@media (prefers-contrast: more) {
+  :root { --secondary: var(--text); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+* { box-sizing: border-box; }
+html { scroll-padding-top: 64px; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.47 var(--sans); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p, ol, ul, pre { margin: 0; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset: 3px; border-radius: 6px; }
+code, kbd { font: .88em/1 var(--mono); }
+/* Commands and keys in running text get a chip, so /btw and /term read as things you type. */
+:not(pre) > code, kbd { padding: .16em .42em; border-radius: 6px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); white-space: nowrap; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 22px; }
+
+/* ---------- nav: product name on the left, one blue action on the right ---------- */
+.nav { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 78%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.nav-in { display: flex; align-items: center; justify-content: space-between; height: 52px; }
+.brand { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 21px; font-weight: 600; letter-spacing: -.01em; }
+.brand:hover { text-decoration: none; }
+.nav nav { display: flex; align-items: center; gap: 20px; font-size: 12px; }
+.nav nav a { color: var(--text); opacity: .8; }
+.nav nav a:hover { opacity: 1; text-decoration: none; }
+.nav nav .nav-cta { display: inline-flex; align-items: center; min-height: 28px; padding: 0 14px; border-radius: 999px; background: var(--action); color: #fff; opacity: 1; }
+.nav nav .nav-cta:hover { filter: brightness(1.08); }
+
+/* ---------- hero ---------- */
+.hero { max-width: 860px; margin: 0 auto; padding: 48px 22px 0; text-align: center; }
+.hero-icon { display: block; width: 80px; height: 80px; margin: 0 auto; }
+h1 { max-width: 19ch; margin: 16px auto 0; font-size: clamp(40px, 6vw, 68px); line-height: 1.05; font-weight: 600; letter-spacing: -.025em; text-wrap: balance; }
+.lead { max-width: 640px; margin: 20px auto 0; color: var(--secondary); font-size: clamp(19px, 2.2vw, 23px); line-height: 1.4; letter-spacing: -.01em; }
+.cta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 28px; margin-top: 28px; }
+.btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 22px; border-radius: 999px; background: var(--action); color: #fff; font-weight: 500; transition: transform .25s var(--spring), filter .15s ease; }
+.btn:hover { text-decoration: none; filter: brightness(1.08); }
+.btn:active { transform: scale(.97); filter: brightness(.92); transition-duration: 0s; }
+/* Inline, not flex, so a link that wraps keeps its chevron after the last word. */
+.more svg { width: 12px; height: 12px; margin-left: 5px; vertical-align: -1px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.more:hover { text-decoration: none; }
+.more:hover span { text-decoration: underline; }
+.fine { margin-top: 16px; color: var(--secondary); font-size: 14px; }
+
+/* ---------- demo: a desktop with Claude Code in a terminal and Recordo's quiz panel ---------- */
+.demo-wrap { max-width: 1084px; margin: 48px auto 0; padding: 0 22px 104px; }
+.demo-bar { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.demo-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 104px; min-height: 44px; padding: 0 18px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--text); font: 500 14px/1 var(--sans); cursor: pointer; transition: transform .25s var(--spring), background-color .15s ease; }
+.demo-button[hidden] { display: none; }
+.demo-button svg { width: 13px; height: 13px; }
+.demo-button:active { transform: scale(.97); background: var(--tile); transition-duration: 0s; }
+.demo-button:not([data-state="ready"]) .i-play,
+.demo-button:not([data-state="playing"]) .i-skip,
+.demo-button:not([data-state="done"]) .i-replay { display: none; }
+.demo { position: relative; height: 680px; overflow: hidden; isolation: isolate; border-radius: 20px; background: var(--wall); box-shadow: 0 20px 48px -24px rgb(17 22 34 / .22); font-family: var(--sans); }
+.no-anim, .no-anim * { transition: none !important; animation: none !important; }
+
+.menubar { position: absolute; inset: 0 0 auto; z-index: 3; display: flex; align-items: center; justify-content: flex-end; gap: 16px; height: 28px; padding: 0 16px; background: rgba(16, 20, 32, .32); -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%); color: #fff; font-size: 13px; font-weight: 500; }
+.mb-icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.45; stroke-linecap: round; stroke-linejoin: round; }
+.clock { display: inline-block; font-variant-numeric: tabular-nums; }
+
+.lights { display: flex; gap: 8px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+.lights i:nth-child(2) { background: #febc2e; }
+.lights i:nth-child(3) { background: #28c840; }
+
+.term { position: absolute; left: 5%; top: 64px; display: flex; flex-direction: column; width: min(580px, calc(95% - 388px)); height: 330px; overflow: hidden; border: 1px solid rgba(255, 255, 255, .1); border-radius: 12px; background: #15171c; color: #e6e6e9; box-shadow: 0 26px 60px rgba(0, 0, 0, .45), 0 2px 8px rgba(0, 0, 0, .25); font: 13px/1.6 var(--mono); }
+.term-bar { position: relative; flex: none; display: flex; align-items: center; height: 30px; padding: 0 12px; background: #23262d; border-bottom: 1px solid rgba(0, 0, 0, .4); }
+.term-title { position: absolute; inset: 0; display: grid; place-items: center; color: #a3a6ad; font: 600 12px/1 var(--sans); }
+.term-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 16px; }
+.welcome { align-self: flex-start; padding: 6px 14px; border: 1px solid #d97757; border-radius: 8px; }
+.spark { color: #d97757; }
+.dim { color: #8b8f98; }
+.transcript { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.t-user { color: #a3a6ad; }
+/* "Thinking" and the reply share one slot, so swapping them doesn't move anything. */
+.t-slot { display: grid; }
+.t-slot > * { grid-area: 1 / 1; }
+.t-think { color: #d97757; opacity: 0; }
+.is-thinking .t-think { opacity: 1; }
+.t-reply { display: flex; gap: 10px; }
+.t-dot { flex: none; width: 7px; height: 7px; margin-top: .62em; border-radius: 50%; background: #e6e6e9; }
+.t-user, .t-reply { opacity: 0; transform: translateY(4px); transition: opacity .25s ease, transform .35s var(--spring); }
+.is-asked .t-user, .is-answered .t-reply { opacity: 1; transform: none; }
+.prompt { flex: none; padding: 7px 12px; border: 1px solid #4a4d55; border-radius: 8px; }
+.caret { display: inline-block; width: 8px; height: 1.15em; vertical-align: -.2em; background: #e6e6e9; animation: blink 1.1s steps(1) infinite; }
+.demo-wrap[data-step="done"] .caret { animation: none; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.fly { position: absolute; left: 0; top: 0; z-index: 4; padding: 9px 14px 8px; border-radius: 9px; background: linear-gradient(160deg, #fffdf7, #f1e5d2); color: #20283f; box-shadow: 0 10px 24px rgba(0, 0, 0, .35); font-size: 16px; font-weight: 600; line-height: 1.2; opacity: 0; pointer-events: none; }
+.fly small { display: block; margin-top: 2px; color: #8a6f52; font-size: 10px; font-weight: 500; }
+.lapse { position: absolute; right: 24px; top: 44px; z-index: 4; padding: 6px 14px; border-radius: 999px; background: rgba(255, 255, 255, .16); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); color: #fff; font-size: 13px; font-weight: 600; opacity: 0; transform: translateY(-6px); transition: opacity .3s ease, transform .4s var(--spring); }
+.is-lapse .lapse { opacity: 1; transform: none; }
+.cursor { position: absolute; left: 0; top: 0; z-index: 5; width: 22px; height: 22px; opacity: 0; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .35)); }
+
+/* Quiz panel: sizes from QuizStyle.swift (340pt wide, 20pt gutter, 48pt options). */
+.panel { position: absolute; right: 24px; bottom: 24px; z-index: 2; width: 340px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); border-radius: 16px; background: color-mix(in srgb, var(--window) 84%, transparent); -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%); box-shadow: 0 22px 56px rgba(0, 0, 0, .35), 0 2px 8px rgba(0, 0, 0, .18); color: var(--text); font-size: 14px; line-height: 1.45; opacity: 0; transform: translate(10px, 14px); transition: opacity .4s var(--spring), transform .4s var(--spring); }
+/* QuizEnter in QuizStyle.swift: a spring with response 0.30 and damping 1, sampled over 0.4s. */
+@supports (transition-timing-function: linear(0, 1)) {
+  .panel { transition-timing-function: linear(0, .067 5%, .205 10%, .358 15%, .499 20%, .619 25%, .715 30%, .79 35%, .847 40%, .921 50%, .961 60%, .981 70%, .991 80%, 1); }
+}
+.is-quiz .panel { opacity: 1; transform: none; }
+.p-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 8px; font-size: 13px; font-weight: 600; }
+.p-close { width: 24px; height: 24px; margin: -4px -6px -4px 0; padding: 6px; fill: none; stroke: var(--secondary); stroke-width: 2.4; stroke-linecap: round; }
+.p-body { padding: 0 20px 16px; }
+.p-meta { color: var(--secondary); font-size: 11px; }
+.p-term { margin: 4px 0 16px; font-size: 22px; font-weight: 600; line-height: 1.25; letter-spacing: -.3px; }
+.options { display: grid; gap: 8px; }
+.option { display: flex; align-items: flex-start; gap: 10px; min-height: 48px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--inset); opacity: 0; transform: translateY(4px); transition: opacity .2s ease, transform .3s var(--spring), background-color .2s ease, border-color .2s ease; }
+.is-quiz .option { opacity: 1; transform: none; }
+.is-quiz .option:nth-child(1) { transition-delay: .12s; }
+.is-quiz .option:nth-child(2) { transition-delay: .15s; }
+.is-quiz .option:nth-child(3) { transition-delay: .18s; }
+.is-quiz .option:nth-child(4) { transition-delay: .21s; }
+.option.is-pressed { transform: scale(.985); transition-duration: 0s; }
+.key { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--line); border-radius: 6px; color: var(--secondary); font-size: 11px; font-weight: 600; }
+.o-text { flex: 1; }
+.mark { flex: none; width: 14px; height: 14px; margin-top: 3px; fill: none; stroke: var(--success); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transform: scale(.6); transition: opacity .3s ease, transform .3s var(--pop); }
+.demo.is-picked .option { opacity: .6; transition-delay: 0s; }
+.is-picked .option.correct { opacity: 1; border-color: var(--success); background: var(--correct-face); }
+.is-picked .correct .mark { opacity: 1; transform: none; }
+.quiet { display: inline-block; padding: 6px 10px; border-radius: 8px; color: var(--action); font-size: 13px; }
+.idk { margin-top: 8px; }
+.p-foot { padding: 12px 20px; border-top: 1px solid var(--line); background: var(--inset); }
+.verdict { display: none; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin-bottom: 8px; }
+.v-title { display: inline-flex; align-items: center; gap: 3px; color: var(--success); font-weight: 600; }
+.v-title svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
+.v-source { color: var(--secondary); font-size: 11px; }
+.p-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.discard, .primary { display: none; }
+.primary { align-items: center; gap: 6px; margin-left: auto; padding: 7px 14px; border-radius: 999px; background: var(--action); color: #fff; font-size: 13px; font-weight: 600; }
+.space { padding: 1px 4px; border: 1px solid rgba(255, 255, 255, .7); border-radius: 4px; font-size: 11px; font-weight: 400; }
+.is-picked .idk, .is-picked .later { display: none; }
+.is-picked .verdict { display: flex; animation: rise .25s var(--spring) .06s both; }
+.is-picked .discard { display: inline-block; animation: fade .2s ease both; }
+.is-picked .primary { display: inline-flex; animation: fade .2s ease both; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+@keyframes fade { from { opacity: 0; } }
+
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; padding: 0; list-style: none; counter-reset: step; font-size: 15px; line-height: 1.4; }
+.steps li { display: flex; gap: 10px; color: var(--secondary); transition: color .3s ease; }
+.steps li::before { counter-increment: step; content: counter(step); flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--tile); color: var(--secondary); font-size: 12px; font-weight: 600; transition: background-color .3s ease, color .3s ease; }
+.demo-wrap[data-step="done"] .steps li,
+.demo-wrap[data-step="1"] .steps li:nth-child(1),
+.demo-wrap[data-step="2"] .steps li:nth-child(2),
+.demo-wrap[data-step="3"] .steps li:nth-child(3) { color: var(--text); }
+.demo-wrap[data-step="1"] .steps li:nth-child(1)::before,
+.demo-wrap[data-step="2"] .steps li:nth-child(2)::before,
+.demo-wrap[data-step="3"] .steps li:nth-child(3)::before { background: var(--action); color: #fff; }
+
+/* ---------- sections ---------- */
+.band { padding: 104px 0; }
+.band.alt { background: var(--bg-alt); }
+h2 { max-width: 24ch; font-size: clamp(32px, 4.5vw, 48px); line-height: 1.08; font-weight: 600; letter-spacing: -.02em; text-wrap: balance; }
+h3 { font-size: 21px; line-height: 1.25; font-weight: 600; letter-spacing: -.015em; }
+.intro { max-width: 680px; margin-top: 16px; color: var(--secondary); font-size: 21px; line-height: 1.4; letter-spacing: -.01em; }
+.cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 48px; }
+.num { display: grid; place-items: center; width: 32px; height: 32px; margin-bottom: 16px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-size: 15px; font-weight: 700; }
+.cols p, .item p { margin-top: 8px; color: var(--secondary); }
+
+.boxes { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 44px; padding: 0; list-style: none; }
+.boxes li { padding: 18px 16px 20px; border-radius: 14px; background: var(--tile); }
+.boxes span { color: var(--secondary); font-size: 13px; }
+.boxes strong { display: block; margin-top: 2px; font-size: 21px; font-weight: 600; letter-spacing: -.015em; }
+/* Bar length is the log of the wait, so each step reads as a longer gap. */
+.boxes li::after { content: ""; display: block; width: var(--w); height: 4px; margin-top: 12px; border-radius: 2px; background: var(--accent); }
+.after { max-width: 680px; margin-top: 28px; color: var(--secondary); }
+
+.grid4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 44px; }
+.item { padding: 28px; border-radius: 18px; background: var(--surface); }
+.item svg { width: 28px; height: 28px; margin-bottom: 14px; fill: none; stroke: var(--accent); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Cards window mockup, from design/sessions/cards. It keeps its real 640px layout and scales down on narrow screens. */
+.frame { position: relative; height: calc(560px * var(--k, 1)); margin-top: 48px; overflow: hidden; border-radius: 20px; background: var(--wall); }
+.cards-win { position: absolute; top: calc(48px * var(--k, 1)); left: 50%; width: 640px; height: 620px; transform: translateX(-50%) scale(var(--k, 1)); transform-origin: top center; border-radius: 12px; background: var(--window); color: var(--text); box-shadow: 0 28px 70px rgba(0, 0, 0, .4), 0 2px 10px rgba(0, 0, 0, .2); }
+.cards-bar { display: flex; align-items: center; height: 28px; padding: 0 14px; }
+.cards-col { max-width: 600px; margin: 0 auto; padding: 0 32px; }
+.cards-title { display: flex; align-items: baseline; gap: 10px; }
+.cards-title strong { font-size: 26px; line-height: 1.15; font-weight: 700; letter-spacing: -.02em; }
+.cards-title span, .sec-head span { color: var(--secondary); font-size: 13px; }
+.search { display: flex; align-items: center; gap: 8px; min-height: 36px; margin-top: 12px; padding: 4px 11px; border-radius: 10px; background: var(--inset); color: var(--secondary); font-size: 13px; }
+.search svg, .trash { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sec-head { display: flex; align-items: baseline; gap: 9px; margin-top: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.sec-head strong { font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.row b { font-size: 16px; line-height: 1.3; font-weight: 600; letter-spacing: -.01em; }
+.row p { margin-top: 3px; font-size: 13px; line-height: 1.6; }
+.row small { display: block; margin-top: 6px; color: var(--secondary); font-size: 12px; line-height: 1.45; }
+.row small + small { margin-top: 1px; }
+.row em { color: var(--text); font-style: normal; font-weight: 600; }
+.trash { width: 16px; height: 16px; margin: 3px 8px 0; color: var(--secondary); }
+/* On black the stage needs an edge more than a shadow. */
+@media (prefers-color-scheme: dark) {
+  .demo, .frame { box-shadow: inset 0 0 0 1px rgb(255 255 255 / .08); }
+}
+
+/* ---------- install ---------- */
+pre { margin-top: 28px; padding: 20px 24px; overflow-x: auto; border-radius: 16px; background: #15171c; color: #e6e6e9; font: 14px/1.75 var(--mono); }
+pre .c { color: #8b8f98; }
+.notes { max-width: 720px; margin-top: 28px; padding-left: 1.1em; color: var(--secondary); }
+.notes li + li { margin-top: 8px; }
+.readme { margin-top: 24px; }
+
+.foot { padding: 28px 0 40px; border-top: 1px solid var(--line); color: var(--secondary); font-size: 13px; }
+.foot p { display: flex; flex-wrap: wrap; gap: 6px 20px; }
+
+/* ---------- small screens ---------- */
+/* Under 1024px the terminal and the 340px panel can't sit side by side, so they overlap like windows do. */
+@media (max-width: 1023px) {
+  .demo { display: grid; height: auto; min-height: 700px; padding: 48px 24px 24px; }
+  .term, .panel { grid-area: 1 / 1; }
+  .term { position: relative; left: auto; top: auto; align-self: start; width: min(100%, 560px); height: auto; min-height: 300px; }
+  .panel { position: relative; right: auto; bottom: auto; align-self: end; justify-self: end; max-width: 100%; }
+  .lapse { right: 16px; top: 38px; }
+}
+@media (max-width: 760px) {
+  .wrap, .hero { padding-left: 16px; padding-right: 16px; }
+  .hero { padding-top: 40px; }
+  .hero-icon { width: 72px; height: 72px; }
+  h2 { line-height: 1.125; }
+  .band { padding: 72px 0; }
+  /* 12px gutters leave room for the panel's real 340px width on a 390px screen. */
+  .demo-wrap { margin-top: 32px; padding: 0 12px 72px; }
+  /* Tall enough that the question in the terminal stays visible above the panel. */
+  .demo { min-height: 790px; padding: 44px 12px 12px; border-radius: 16px; }
+  .term { width: 100%; font-size: 12px; }
+  .lapse { right: 12px; }
+  .steps { grid-template-columns: 1fr; gap: 10px; }
+  .cols, .grid4 { grid-template-columns: 1fr; }
+  .cols { gap: 32px; }
+  .boxes { grid-template-columns: repeat(3, 1fr); }
+  .frame { border-radius: 16px; }
+}
+@media (max-width: 480px) {
+  .nav nav a:first-child { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-user, .t-reply, .panel, .option, .mark, .lapse { transform: none !important; }
+  .panel { transition: opacity .22s ease-out; }
+  .is-picked .verdict { animation-name: fade; }
+  .caret { animation: none; }
+  .btn:active, .demo-button:active { transform: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .nav { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .menubar { background: #1a2030; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .panel { background: var(--window); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .lapse { background: #30394e; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top"><img src="icon.svg" alt="" width="28" height="28">Recordo</a>
+    <nav aria-label="Page">
+      <a href="#how">How it works</a>
+      <a href="https://github.com/impelcrypto/recordo">GitHub</a>
+      <a class="nav-cta" href="#install">Install</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <img class="hero-icon" src="icon.svg" alt="" width="80" height="80">
+    <h1>Remember the terms you look up in Claude Code.</h1>
+    <p class="lead">Recordo is a macOS menu bar app. It turns the terms you ask Claude about into four-choice quizzes, then asks you again as you start to forget.</p>
+    <div class="cta">
+      <a class="btn" href="https://github.com/impelcrypto/recordo">View on GitHub</a>
+      <a class="more" href="#how"><span>See how it works</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a>
+    </div>
+    <p class="fine">Free and open source. Build it from source on macOS 14 or later with Swift 6 and the Claude Code CLI.</p>
+  </section>
+
+  <!-- The markup holds the finished state, so the demo still reads without JavaScript. -->
+  <div class="demo-wrap" data-step="done">
+    <div class="demo-bar">
+      <button class="demo-button" type="button" data-state="ready" hidden>
+        <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg>
+        <svg class="i-skip" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5v14l10.5-7zM16.5 5h2.5v14h-2.5z" fill="currentColor"/></svg>
+        <svg class="i-replay" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5M4.5 3.5V8H9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="demo-label">Play</span>
+      </button>
+    </div>
+    <div class="demo is-asked is-answered is-quiz is-picked" role="img" aria-label="Demo: in a terminal, someone asks Claude Code “what is LCP?” and Claude explains it. At Recordo’s daily sync, the answer becomes a card and drops into Recordo in the menu bar. Later, a Recordo panel in the bottom-right corner asks what LCP means with four choices, and they pick the right one.">
+      <div class="menubar">
+        <svg class="mb-icon" viewBox="0 0 18 18" aria-hidden="true"><path d="M3.8 8.5V2.35C3.8 1.9 4.15 1.55 4.6 1.55H13.4C13.85 1.55 14.2 1.9 14.2 2.35V8.5"/><path d="M5.5 5.2L8.1 7.3L12.4 3.5" stroke-width="1.3"/><path d="M2.3 9H15.7L14.8 15.25C14.73 15.78 14.36 16.1 13.8 16.1H4.2C3.64 16.1 3.27 15.78 3.2 15.25L2.3 9Z"/></svg>
+        <span class="clock">Thu 15:40</span>
+      </div>
+
+      <div class="term">
+        <div class="term-bar"><span class="lights"><i></i><i></i><i></i></span><span class="term-title">storefront</span></div>
+        <div class="term-body">
+          <div class="welcome"><span class="spark">✻</span> Welcome to Claude Code!<br><span class="dim">cwd: ~/storefront</span></div>
+          <div class="transcript">
+            <p class="t-user">&gt; what is LCP?</p>
+            <div class="t-slot">
+              <p class="t-think">✻ Thinking…</p>
+              <p class="t-reply"><span class="t-dot"></span><span>LCP (Largest Contentful Paint) is the time until the largest image or text block in the viewport renders. It’s one of the Core Web Vitals, and under 2.5 seconds counts as good.</span></p>
+            </div>
+          </div>
+          <div class="prompt">&gt; <span class="typed"></span><span class="caret"></span></div>
+        </div>
+      </div>
+
+      <div class="fly">LCP<small>web-performance</small></div>
+      <div class="lapse">Later that day</div>
+
+      <div class="panel">
+        <div class="p-head"><span>Review 1/1</span><svg class="p-close" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></div>
+        <div class="p-body">
+          <p class="p-meta">web-performance · Box 0</p>
+          <p class="p-term">LCP</p>
+          <div class="options">
+            <div class="option"><span class="key">A</span><span class="o-text">Time from the request being sent until the first byte of the HTML response arrives</span></div>
+            <div class="option correct"><span class="key">B</span><span class="o-text">Time until the largest image or text block in the viewport finishes rendering</span><svg class="mark" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+            <div class="option"><span class="key">C</span><span class="o-text">Total amount of unexpected layout movement of visible elements during page load</span></div>
+            <div class="option"><span class="key">D</span><span class="o-text">Time between a user’s first click and the moment the browser responds to that input</span></div>
+          </div>
+          <span class="quiet idk">I don’t know</span>
+        </div>
+        <div class="p-foot">
+          <p class="verdict"><span class="v-title"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Correct</span><span class="v-source">9/24 · storefront · asked in chat</span></p>
+          <div class="p-actions">
+            <span class="quiet later">Later</span>
+            <span class="quiet discard">Discard This Card</span>
+            <span class="primary">Close <span class="space">␣</span></span>
+          </div>
+        </div>
+      </div>
+
+      <svg class="cursor" viewBox="0 0 24 24"><path d="M5 3v15.2l4.1-3.9 2.6 5.9 2.7-1.2-2.6-5.8h5.6z" fill="#000" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+    </div>
+
+    <ol class="steps">
+      <li>You ask Claude Code what a term means.</li>
+      <li>At its daily sync, Recordo turns the answer into a card.</li>
+      <li>When the card is due, Recordo quizzes you in the corner of your screen.</li>
+    </ol>
+  </div>
+
+  <section class="band alt" id="how">
+    <div class="wrap">
+      <h2>How it works</h2>
+      <div class="cols">
+        <div>
+          <span class="num">1</span>
+          <h3>Ask as usual</h3>
+          <p>Ask Claude Code what a word or abbreviation means, in a normal prompt or with <code>/btw</code>. To skip the filtering step, ask with <code>/term LCP</code>.</p>
+        </div>
+        <div>
+          <span class="num">2</span>
+          <h3>Recordo writes the cards</h3>
+          <p>Once a day, Recordo has Claude pick out your new prompts that ask what something means. Claude then writes a short definition from that conversation, plus three wrong answers that sound right.</p>
+        </div>
+        <div>
+          <span class="num">3</span>
+          <h3>A quiz in the corner</h3>
+          <p>Up to three due cards show up in a small panel at the bottom right of your screen, at most once every three hours by default. Pick an answer and go back to what you were doing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <h2>Reviews timed to the forgetting curve</h2>
+      <p class="intro">Recordo spaces reviews along Ebbinghaus’s forgetting curve and asks again as a term starts to fade, so it sticks. Each correct answer moves the card up a box, and it waits longer before it’s due again.</p>
+      <ol class="boxes">
+        <li style="--w: 21%"><span>Box 1</span><strong>4 hours</strong></li>
+        <li style="--w: 48%"><span>Box 2</span><strong>1 day</strong></li>
+        <li style="--w: 65%"><span>Box 3</span><strong>3 days</strong></li>
+        <li style="--w: 78%"><span>Box 4</span><strong>7 days</strong></li>
+        <li style="--w: 88%"><span>Box 5</span><strong>14 days</strong></li>
+        <li style="--w: 100%"><span>Box 6</span><strong>30 days</strong></li>
+      </ol>
+      <p class="after">A wrong answer sends the card back to the start. So does asking Claude about the same term again. If you don’t know, press “I don’t know” instead of guessing. It counts as wrong, while a lucky guess would move the card up like a real answer.</p>
+    </div>
+  </section>
+
+  <section class="band alt">
+    <div class="wrap">
+      <h2>Recordo waits for a good moment</h2>
+      <div class="grid4">
+        <div class="item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M14 10h.01M17.5 10h.01M8 14h8"/></svg>
+          <h3>Your keyboard stays put</h3>
+          <p>The panel shows up without taking focus. Your keystrokes still go to the app you were using.</p>
+        </div>
+        <div class="item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.2A8 8 0 1 1 9.8 4.5a6.4 6.4 0 0 0 9.7 9.7z"/></svg>
+          <h3>Quiet when you’re busy</h3>
+          <p>Automatic quizzes skip your Quiet Hours, Focus, and times when the app in front is full screen. Recordo can’t see a Focus that starts on a schedule, so cover those hours with Quiet Hours.</p>
+        </div>
+        <div class="item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+          <h3>Put it off</h3>
+          <p>“Later” closes the panel, and the same cards come back at the next quiz.</p>
+        </div>
+        <div class="item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7M10.2 10.5v5.5M13.8 10.5v5.5"/></svg>
+          <h3>Drop bad cards</h3>
+          <p>If Claude got a definition wrong, discard the card after you answer.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <h2>Every card in one window</h2>
+      <p class="intro">Search terms and definitions, see when each card comes back, and discard the ones you don’t need. Press <kbd>⌃⌥⌘C</kbd> to open it from any app.</p>
+      <div class="frame" role="img" aria-label="The Recordo Cards window. It shows 16 cards, 14 of them under Learning, such as LCP, idempotent, and hydration, each with its definition, box, next review time, and where you asked about it.">
+        <div class="cards-win">
+          <div class="cards-bar"><span class="lights"><i></i><i></i><i></i></span></div>
+          <div class="cards-col">
+            <div class="cards-title"><strong>Cards</strong><span>16 cards</span></div>
+            <div class="search"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20"/></svg>Search terms and definitions</div>
+            <div class="sec-head"><strong>Learning</strong><span>14</span></div>
+            <div class="row"><div><b>LCP</b><p>Time until the largest image or text block in the viewport finishes rendering</p><small>web-performance · Box 0 · <em>Due now</em></small><small>9/24 · storefront · asked in chat</small></div><svg class="trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7"/></svg></div>
+            <div class="row"><div><b>idempotent</b><p>Running it once or many times leaves the system in the same final state and result</p><small>api-design · Box 0 · <em>Due now</em></small><small>9/23 · payments-api · asked via /btw</small></div><svg class="trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7"/></svg></div>
+            <div class="row"><div><b>hydration</b><p>Attaching event handlers and state to server-rendered HTML so the page becomes usable</p><small>react · Box 1 · Next: today at 18:10</small><small>9/23 · storefront · asked in chat</small></div><svg class="trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7"/></svg></div>
+            <div class="row"><div><b>CORS preflight</b><p>An OPTIONS request the browser sends first to ask if a cross-origin request is allowed</p><small>browser-security · Box 2 · <em>Due now</em></small><small>9/21 · storefront · asked via /term</small></div><svg class="trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7"/></svg></div>
+            <div class="row"><div><b>backpressure</b><p>A slow consumer signaling a fast producer to slow down so buffers don’t grow unbounded</p><small>streams · Box 2 · Next: tomorrow at 11:05</small><small>9/19 · sync-service · asked in chat</small></div><svg class="trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band alt">
+    <div class="wrap">
+      <h2>Your cards stay on your Mac</h2>
+      <p class="intro">Recordo keeps your cards on your Mac, in one JSON file in your Application Support folder. During a sync, it sends your new prompts, parts of the conversations around your questions, and your existing card tags to Claude through your own <code>claude</code> CLI. Recordo has no account or server of its own, and it runs the CLI with tools, hooks, and MCP servers turned off.</p>
+    </div>
+  </section>
+
+  <section class="band" id="install">
+    <div class="wrap">
+      <h2>Install</h2>
+      <p class="intro">Build Recordo from source. You need macOS 14 or later, a Swift 6 toolchain (Xcode or the Command Line Tools), and the Claude Code CLI, logged in.</p>
+<pre><code>git clone https://github.com/impelcrypto/recordo.git
+cd recordo
+make install        <span class="c"># build, copy to /Applications, and launch</span>
+make install-skill  <span class="c"># optional: adds the /term skill</span></code></pre>
+      <ul class="notes">
+        <li>Recordo lives in the menu bar and has no Dock icon. The first launch syncs your last 30 days of questions in the background, which takes about 30 minutes. A percentage next to the menu bar icon shows how far along it is.</li>
+        <li>Recordo works in English and Japanese. It starts in Japanese if your Mac uses Japanese and in English otherwise, and you can switch in Settings.</li>
+        <li>To pause quizzes during Focus, give Recordo Full Disk Access. A button on the Quizzes page in Settings opens the right pane in System Settings.</li>
+      </ul>
+      <p class="readme"><a class="more" href="https://github.com/impelcrypto/recordo#readme"><span>Setup details and troubleshooting in the README</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p><span>Recordo</span><a href="https://github.com/impelcrypto/recordo/blob/master/LICENSE">MIT License</a><a href="https://github.com/impelcrypto/recordo">Source on GitHub</a></p>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const wrap = document.querySelector('.demo-wrap');
+  const demo = wrap.querySelector('.demo');
+  const button = wrap.querySelector('.demo-button');
+  const label = button.querySelector('.demo-label');
+  const $ = (selector) => demo.querySelector(selector);
+  const typed = $('.typed'), clock = $('.clock'), icon = $('.mb-icon'), reply = $('.t-reply');
+  const fly = $('.fly'), cursor = $('.cursor'), correct = $('.option.correct');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const SPRING = 'cubic-bezier(.22, 1, .36, 1)';
+  const STAGES = ['asked', 'answered', 'quiz', 'picked'];
+  const LABELS = { ready: 'Play', playing: 'Skip', done: 'Replay' };
+  const running = [];
+  const timers = new Set();
+  let run = 0, playing = false, paused = false, onscreen = false, autoplayed = false;
+
+  // Each play() takes a new run id; an older run stops at its next step.
+  const check = (id) => { if (id !== run) throw 0; };
+  // Waits stop counting while the demo is paused, so it picks up where the viewer left it.
+  const wait = (ms, id) => new Promise((resolve) => {
+    const timer = { left: ms };
+    timer.start = () => {
+      timer.at = performance.now();
+      timer.handle = setTimeout(() => { timers.delete(timer); resolve(); }, timer.left);
+    };
+    timer.stop = () => { clearTimeout(timer.handle); timer.left -= performance.now() - timer.at; };
+    timers.add(timer);
+    if (!paused) timer.start();
+  }).then(() => check(id));
+  const animate = (el, keyframes, options) => {
+    const animation = el.animate(keyframes, { fill: 'forwards', ...options });
+    running.push(animation);
+    if (paused) animation.pause();
+    // A skip cancels animations nobody awaits; mark those rejections handled.
+    animation.finished.catch(() => {});
+    return animation.finished;
+  };
+  const add = (...names) => names.forEach((name) => demo.classList.add('is-' + name));
+  const at = (el) => {
+    const box = demo.getBoundingClientRect(), r = el.getBoundingClientRect();
+    return { x: r.left - box.left, y: r.top - box.top, w: r.width, h: r.height };
+  };
+  const setButton = (state) => { button.dataset.state = state; label.textContent = LABELS[state]; };
+
+  function setPaused(on) {
+    if (on === paused) return;
+    paused = on;
+    timers.forEach((timer) => (on ? timer.stop() : timer.start()));
+    running.forEach((animation) => {
+      if (on && animation.playState === 'running') animation.pause();
+      if (!on && animation.playState === 'paused') animation.play();
+    });
+  }
+  const update = () => setPaused(playing && (!onscreen || document.hidden));
+
+  function render(stages, time) {
+    running.splice(0).forEach((animation) => animation.cancel());
+    timers.forEach((timer) => clearTimeout(timer.handle));
+    timers.clear();
+    demo.classList.add('no-anim');
+    demo.classList.remove('is-thinking', 'is-lapse', ...STAGES.map((stage) => 'is-' + stage));
+    correct.classList.remove('is-pressed');
+    add(...stages);
+    typed.textContent = '';
+    clock.textContent = time;
+    demo.offsetWidth; // apply the jump before transitions come back
+    demo.classList.remove('no-anim');
+  }
+
+  function stop(skipped) {
+    if (skipped) { run++; render(STAGES, 'Thu 15:40'); }
+    playing = false;
+    update();
+    wrap.dataset.step = 'done';
+    setButton('done');
+  }
+
+  async function flyCard(id) {
+    if (reduced.matches) return wait(600, id);
+    const from = at(reply), to = at(icon);
+    const x0 = from.x + 20, y0 = from.y - 8;
+    const x1 = to.x + to.w / 2 - fly.offsetWidth / 2, y1 = to.y + to.h / 2 - fly.offsetHeight / 2;
+    const place = (x, y, s) => `translate(${x}px, ${y}px) scale(${s})`;
+    await animate(fly, [{ opacity: 0, transform: place(x0, y0 + 10, .94) }, { opacity: 1, transform: place(x0, y0, 1) }], { duration: 320, easing: SPRING });
+    check(id);
+    await wait(350, id);
+    await animate(fly, [
+      { opacity: 1, transform: place(x0, y0, 1) },
+      { opacity: 1, transform: place((x0 + x1) / 2, y1 + (y0 - y1) * .3, .6), offset: .55 },
+      { opacity: 0, transform: place(x1, y1, .16) },
+    ], { duration: 750, easing: 'cubic-bezier(.45, 0, .25, 1)' });
+    check(id);
+    // A small settle, no overshoot: the menu bar is system chrome, not the show.
+    animate(icon, [{ transform: 'scale(1)' }, { transform: 'scale(1.1)', offset: .35 }, { transform: 'scale(1)' }], { duration: 240, easing: 'ease-out' });
+  }
+
+  async function tickClock(id) {
+    const dy = reduced.matches ? 0 : 6;
+    await animate(clock, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateY(${-dy}px)` }], { duration: 160, easing: 'ease-in' });
+    check(id);
+    clock.textContent = 'Thu 15:40';
+    await animate(clock, [{ opacity: 0, transform: `translateY(${dy}px)` }, { opacity: 1, transform: 'none' }], { duration: 240, easing: SPRING });
+    check(id);
+  }
+
+  async function pick(id) {
+    if (!reduced.matches) {
+      const r = at(correct);
+      const x = r.x + r.w * .6, y = r.y + r.h * .5;
+      await animate(cursor, [
+        { opacity: 0, transform: `translate(${x - 70}px, ${y + 90}px)` },
+        { opacity: 1, transform: `translate(${x - 60}px, ${y + 76}px)`, offset: .2 },
+        { opacity: 1, transform: `translate(${x}px, ${y}px)` },
+      ], { duration: 900, easing: 'cubic-bezier(.3, 0, .2, 1)' });
+      check(id);
+      correct.classList.add('is-pressed');
+      await wait(150, id);
+      correct.classList.remove('is-pressed');
+    }
+    add('picked');
+    if (!reduced.matches) animate(cursor, [{ opacity: 1 }, { opacity: 0 }], { duration: 300, delay: 1000 });
+  }
+
+  async function play() {
+    const id = ++run;
+    render([], 'Thu 10:12');
+    playing = true;
+    update();
+    setButton('playing');
+    wrap.dataset.step = '1';
+    try {
+      await wait(700, id);
+      for (const letter of 'what is LCP?') {
+        typed.textContent += letter;
+        await wait(55 + Math.random() * 45, id);
+      }
+      await wait(450, id);
+      typed.textContent = '';
+      add('asked');
+      await wait(300, id);
+      demo.classList.add('is-thinking');
+      await wait(1000, id);
+      demo.classList.remove('is-thinking');
+      add('answered');
+      await wait(1700, id);
+      wrap.dataset.step = '2';
+      await flyCard(id);
+      await wait(700, id);
+      wrap.dataset.step = '3';
+      demo.classList.add('is-lapse');
+      await tickClock(id);
+      await wait(1000, id);
+      demo.classList.remove('is-lapse');
+      await wait(250, id);
+      add('quiz');
+      await wait(1500, id);
+      await pick(id);
+      await wait(1300, id);
+      stop(false);
+    } catch (error) {
+      if (id === run) throw error;
+    }
+  }
+
+  button.hidden = false;
+  button.addEventListener('click', () => (playing ? stop(true) : play()));
+  // Turning on Reduce Motion mid-demo jumps to the finished picture instead of finishing the movement.
+  reduced.addEventListener('change', () => { if (reduced.matches && playing) stop(true); });
+  document.addEventListener('visibilitychange', update);
+  if (!reduced.matches) {
+    render([], 'Thu 10:12');
+    wrap.dataset.step = '';
+  }
+  // On a phone the demo can be taller than the screen, so a share of the screen counts as well as a share of the demo.
+  new IntersectionObserver(([entry]) => {
+    const seen = entry.intersectionRatio, height = entry.intersectionRect.height;
+    onscreen = seen >= .15 || height >= innerHeight * .3;
+    if (!autoplayed && !reduced.matches && (seen >= .55 || height >= innerHeight * .5)) {
+      autoplayed = true;
+      play();
+    }
+    update();
+  }, { threshold: [0, .15, .3, .45, .55, .7] }).observe(demo);
+
+  // The Cards mockup keeps its real 640px layout; narrow screens get a scaled copy.
+  const frame = document.querySelector('.frame');
+  new ResizeObserver(([entry]) => {
+    frame.style.setProperty('--k', Math.min(1, (entry.contentRect.width - 32) / 640));
+  }).observe(frame);
+})();
+</script>
+</body>
+</html>

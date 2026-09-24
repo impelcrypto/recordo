@@ -133,8 +133,8 @@ final class ImporterTests: XCTestCase {
         let japanese = FakeClaudeRunner([#"{"cards":[]}"#])
         _ = try await importer(japanese).sync()
 
-        XCTAssertTrue(english.prompts[0].contains("英語で120字以内"))
-        XCTAssertTrue(english.prompts[0].contains("差を20字以内"))
+        XCTAssertTrue(english.prompts[0].contains("英語で90字以内"))
+        XCTAssertTrue(english.prompts[0].contains("差を15字以内"))
         XCTAssertTrue(japanese.prompts[0].contains("日本語で60字以内"))
         XCTAssertTrue(japanese.prompts[0].contains("差を10字以内"))
     }

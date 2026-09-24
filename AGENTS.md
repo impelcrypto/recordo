@@ -52,7 +52,7 @@ In `Sources/RecordoKit/`:
 - Sign the `.app` with an Apple Development certificate and keep the bundle id `app.recordo`. The Full Disk Access grant is tied to both, and changing either means granting it again.
 - Write `README.md` and `AGENTS.md` in English.
 - Code comments are in English, at most two lines, and explain only why.
-- Write UI text as `tr("日本語", "English")` with both languages side by side. The user picks the language in Settings, and it defaults to Japanese. Don't translate card terms and definitions; keep them as claude wrote them. New definitions follow the language setting, which `Importer` reads for each batch and passes to `Prompts.generate`.
+- Write UI text as `tr("日本語", "English")` with both languages side by side. The user picks the language in Settings. It defaults to the system language: Japanese when macOS prefers Japanese, English otherwise. Don't translate card terms and definitions; keep them as claude wrote them. New definitions follow the language setting, which `Importer` reads for each batch and passes to `Prompts.generate`.
 - When a test compares UI text, pin the language with `useLanguage(.japanese)` or similar. Other packages' tests can leave the same `appLanguage` key behind in the shared test process defaults.
 - Mark something `public` only if code outside `RecordoKit` uses it.
 - Before writing Swift for a screen, build an HTML prototype and get it approved. Use the `apple-design` skill for the prototype, and base it on `QuizStyle.swift` and the prototypes in `design/sessions/quiz/`.
