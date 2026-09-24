@@ -2,6 +2,13 @@
 
 A macOS menu bar app that quizzes you, four choices at a time, on terms you asked about in Claude Code.
 
+## Public repository
+
+This repository is public. Anyone can read what gets committed, including old commits, and removing it later means rewriting history.
+
+- Keep personal and private information out of code, comments, docs, commit messages, and fixtures. That covers names of other projects or apps (write "an earlier app" instead), absolute local paths like `/Users/<name>/...` (use `~` or a placeholder), email addresses, tokens, and anything from a real `history.jsonl`, session log, or `cards.json`.
+- Check the diff for these before committing.
+
 ## Docs
 
 - `README.md`: install and usage (for people)
