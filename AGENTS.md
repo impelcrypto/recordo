@@ -18,7 +18,7 @@ This repository is public. Anyone can read what gets committed, including old co
 - `docs/superpowers/plans/2026-09-23-recordo-ui.md`: plan 2 (screens)
 - `docs/superpowers/plans/2026-09-24-recordo-cards.md`: plan 3 (card list)
 - `design/README.md`: HTML prototypes of the screens and a list of design decisions
-- `docs/index.html`: the landing page, served by GitHub Pages from `/docs` on `master`. It draws the quiz panel and the card list as HTML mockups with made-up cards, so when their English text or `Theme.swift` colors change, update the page too
+- `docs/index.html`: the landing page, served by GitHub Pages from `/docs` on `master`. It draws the quiz panel and the card list as HTML mockups with made-up cards, so when their English text or `Theme.swift` colors change, update the page too. `docs/demo.gif`, shown at the top of `README.md`, is a recording of the page's demo, so record it again when the demo changes
 
 ## Where the code lives
 

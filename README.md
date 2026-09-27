@@ -1,6 +1,10 @@
-# Recordo
+<p align="center"><img src="docs/icon.svg" width="128" height="128" alt=""></p>
+
+<h1 align="center">Recordo</h1>
 
 A macOS menu bar app that turns the terms you ask about in Claude Code into four-choice quizzes and asks them every few hours. You keep using Claude Code as usual. Once a day Recordo picks up questions like "what is LCP?", turns them into cards, and asks you again in the bottom-right corner of the screen just as you start to forget.
+
+![Demo: someone asks Claude Code "what is LCP?" in a terminal. At the daily sync the answer becomes a card and drops into Recordo in the menu bar. The next day a panel in the bottom-right corner asks what LCP means with four choices, and they pick the right one.](docs/demo.gif)
 
 ## How it works
 
