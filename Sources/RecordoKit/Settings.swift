@@ -3,6 +3,7 @@ import SwiftUI
 
 enum SettingsKey {
     static let intervalHours = "quizIntervalHours"
+    static let quizCount = "quizQuestionCount"
     static let quietEnabled = "quietEnabled"
     static let quietStart = "quietStartMinutes"
     static let quietEnd = "quietEndMinutes"
@@ -14,6 +15,7 @@ enum SettingsKey {
     static func registerDefaults(_ defaults: UserDefaults = .standard) {
         defaults.register(defaults: [
             intervalHours: 3,
+            quizCount: 3,
             quietEnabled: false,
             quietStart: 22 * 60,
             quietEnd: 9 * 60,
@@ -22,18 +24,18 @@ enum SettingsKey {
     }
 }
 
-/// Language of the app's own words; card terms and definitions stay as claude wrote them.
+/// Language of the app's own words and of new card definitions; existing cards stay as claude wrote them.
 enum AppLanguage: String {
     case system
     case japanese = "ja"
     case english = "en"
 
     // Read at call time, so AppKit code and static helpers follow Settings without a SwiftUI environment.
-    fileprivate static var current: AppLanguage {
-        AppLanguage(rawValue: UserDefaults.standard.string(forKey: SettingsKey.language) ?? "") ?? .japanese
+    static var current: AppLanguage {
+        AppLanguage(rawValue: UserDefaults.standard.string(forKey: SettingsKey.language) ?? "") ?? .system
     }
 
-    fileprivate var isJapanese: Bool {
+    var isJapanese: Bool {
         switch self {
         case .japanese: return true
         case .english: return false
@@ -75,7 +77,7 @@ func tr(_ ja: String, _ en: String) -> String {
 }
 
 struct SettingsView: View {
-    @AppStorage(SettingsKey.language) private var language = AppLanguage.japanese
+    @AppStorage(SettingsKey.language) private var language = AppLanguage.system
     @State private var pane: SettingsPane? = .general
 
     var body: some View {
@@ -170,7 +172,7 @@ private struct SidebarRow: View {
 }
 
 private struct GeneralPane: View {
-    @AppStorage(SettingsKey.language) private var language = AppLanguage.japanese
+    @AppStorage(SettingsKey.language) private var language = AppLanguage.system
     @AppStorage(SettingsKey.appearance) private var appearance = AppAppearance.system
     @AppStorage(SettingsKey.cardsShortcut) private var cardsShortcut = Hotkey.cardsDefault.stored
 
@@ -209,6 +211,7 @@ private struct GeneralPane: View {
 
 private struct QuizSettingsPane: View {
     @AppStorage(SettingsKey.intervalHours) private var intervalHours = 3
+    @AppStorage(SettingsKey.quizCount) private var quizCount = 3
     @AppStorage(SettingsKey.quietEnabled) private var quietEnabled = false
     @AppStorage(SettingsKey.quietStart) private var quietStart = 22 * 60
     @AppStorage(SettingsKey.quietEnd) private var quietEnd = 9 * 60
@@ -221,6 +224,16 @@ private struct QuizSettingsPane: View {
                     Picker(tr("出題の間隔", "Quiz Interval"), selection: $intervalHours) {
                         ForEach([1, 2, 3, 4, 6], id: \.self) { hours in
                             Text(tr("\(hours) 時間", hours == 1 ? "1 hour" : "\(hours) hours")).tag(hours)
+                        }
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+                }
+                RowDivider()
+                SettingRow(label: tr("1回の問題数", "Questions per Quiz")) {
+                    Picker(tr("1回の問題数", "Questions per Quiz"), selection: $quizCount) {
+                        ForEach(1...10, id: \.self) { count in
+                            Text(tr("\(count) 問", count == 1 ? "1 question" : "\(count) questions")).tag(count)
                         }
                     }
                     .labelsHidden()

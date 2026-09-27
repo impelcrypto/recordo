@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recordo · 同期中のメニューバー</title>
+<style>
+/* Menu bar and menu tokens from design/sessions/quiz/apple-quiz.css. */
+:root { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif; color: #1d1d1f; background: #e7e8ec; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 24px; }
+h1 { margin: 0 0 4px; font-size: 18px; }
+.note { margin: 0 0 20px; color: #68686d; font-size: 13px; }
+.grid { display: grid; grid-template-columns: 180px repeat(2, minmax(0, 1fr)); gap: 12px 16px; align-items: start; max-width: 1100px; }
+.label { padding-top: 8px; font-weight: 600; font-size: 13px; }
+.label small { display: block; color: #68686d; font-weight: 400; }
+.col-head { font-size: 12px; color: #68686d; }
+
+/* Shown at 2x so the 13pt menu bar text is easy to judge. */
+.shot { zoom: 2; border-radius: 6px; overflow: hidden; }
+.desk { position: relative; height: 96px; background: radial-gradient(120% 100% at 12% 8%, #7fa7e6 0%, #5c7fc9 32%, #3c5aa6 62%, #2a3f7c 100%); }
+.dark .desk { background: radial-gradient(120% 100% at 12% 8%, #3a4664 0%, #262d45 32%, #171c30 62%, #0d1020 100%); }
+.menubar { display: flex; align-items: center; justify-content: flex-end; gap: 10px; height: 24px; padding: 0 10px; background: rgba(255, 255, 255, .55); backdrop-filter: blur(20px) saturate(180%); color: #1d1d1f; font-size: 13px; }
+.dark .menubar { background: rgba(28, 28, 30, .55); color: #f5f5f7; }
+.item { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px; border-radius: 5px; font-variant-numeric: tabular-nums; }
+.item.open { background: rgba(0, 0, 0, .12); }
+.dark .item.open { background: rgba(255, 255, 255, .18); }
+.item svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.other { opacity: .85; }
+
+.menu { position: absolute; top: 28px; right: 60px; width: 200px; padding: 5px; border-radius: 9px; background: rgba(246, 246, 246, .88); backdrop-filter: blur(26px) saturate(180%); border: 1px solid rgba(0, 0, 0, .12); box-shadow: 0 12px 30px rgba(0, 0, 0, .25); font-size: 13px; color: #1d1d1f; }
+.dark .menu { background: rgba(40, 40, 42, .9); border-color: rgba(255, 255, 255, .12); color: #f5f5f7; }
+.row { display: flex; align-items: center; gap: 8px; padding: 2px 8px; border-radius: 5px; line-height: 1.35; }
+.row.disabled { color: #8e8e93; }
+.sep { height: 1px; margin: 4px 8px; background: rgba(0, 0, 0, .12); }
+.dark .sep { background: rgba(255, 255, 255, .14); }
+.tall .desk { height: 150px; }
+</style>
+</head>
+<body>
+<h1>同期中のメニューバー（2案）</h1>
+<p class="note">同期のあいだ、メニューバーのアイコンの横に進み具合を％で出す。％は終わったチャンク数 ÷ チャンク数。準備中（チャンク数がまだ分からないあいだ）は 0%。同期が終われば元のアイコンだけに戻る。2倍に拡大して表示している。</p>
+
+<div class="grid">
+  <span></span><span class="col-head">ライト</span><span class="col-head">ダーク</span>
+
+  <div class="label">いつも<small>同期していないとき</small></div>
+  <div class="shot"><div class="desk"><div class="menubar"><span class="item"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="14" height="10" rx="2"/><path d="M7 9V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg></span><span class="other">木 10:12</span></div></div></div>
+  <div class="shot dark"><div class="desk"><div class="menubar"><span class="item"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="14" height="10" rx="2"/><path d="M7 9V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg></span><span class="other">木 10:12</span></div></div></div>
+
+  <div class="label">案A<small>アイコンはそのまま、横に％</small></div>
+  <div class="shot"><div class="desk"><div class="menubar"><span class="item"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="14" height="10" rx="2"/><path d="M7 9V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>40%</span><span class="other">木 10:12</span></div></div></div>
+  <div class="shot dark"><div class="desk"><div class="menubar"><span class="item"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="14" height="10" rx="2"/><path d="M7 9V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>40%</span><span class="other">木 10:12</span></div></div></div>
+
+  <div class="label">案B<small>同期の矢印に替えて、横に％</small></div>
+  <div class="shot"><div class="desk"><div class="menubar"><span class="item"><svg viewBox="0 0 24 24"><path d="M5 11a7 7 0 0 1 12-4.2L19 9M19 4.5V9h-4.5M19 13a7 7 0 0 1-12 4.2L5 15M5 19.5V15h4.5"/></svg>40%</span><span class="other">木 10:12</span></div></div></div>
+  <div class="shot dark"><div class="desk"><div class="menubar"><span class="item"><svg viewBox="0 0 24 24"><path d="M5 11a7 7 0 0 1 12-4.2L19 9M19 4.5V9h-4.5M19 13a7 7 0 0 1-12 4.2L5 15M5 19.5V15h4.5"/></svg>40%</span><span class="other">木 10:12</span></div></div></div>
+
+  <div class="label">メニューを開いたとき<small>どちらの案でも同じ。今の「同期中 3/15」を％に替える</small></div>
+  <div class="shot tall"><div class="desk"><div class="menubar"><span class="item open"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="14" height="10" rx="2"/><path d="M7 9V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>40%</span><span class="other">木 10:12</span></div>
+    <div class="menu"><div class="row disabled">出題</div><div class="row disabled">同期中 40%</div><div class="sep"></div><div class="row disabled">最後の同期：昨日 9:03</div><div class="sep"></div><div class="row">カード一覧…</div><div class="row">設定…</div><div class="row">Recordo を終了</div></div></div></div>
+  <div class="shot tall dark"><div class="desk"><div class="menubar"><span class="item open"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="14" height="10" rx="2"/><path d="M7 9V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>40%</span><span class="other">木 10:12</span></div>
+    <div class="menu"><div class="row disabled">Quiz</div><div class="row disabled">Syncing 40%</div><div class="sep"></div><div class="row disabled">Last sync: yesterday at 9:03</div><div class="sep"></div><div class="row">Cards…</div><div class="row">Settings…</div><div class="row">Quit Recordo</div></div></div></div>
+</div>
+</body>
+</html>

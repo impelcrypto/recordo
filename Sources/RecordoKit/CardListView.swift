@@ -78,7 +78,7 @@ final class CardListWindow {
 
 private struct CardListView: View {
     @ObservedObject var model: AppModel
-    @AppStorage(SettingsKey.language) private var language = AppLanguage.japanese
+    @AppStorage(SettingsKey.language) private var language = AppLanguage.system
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var query = ""
     @State private var page = 0
@@ -356,6 +356,7 @@ private struct CardRow: View {
             .buttonStyle(TrashButtonStyle())
             .focused(focus, equals: card.id)
             .disabled(!canDiscard)
+            .clickCursor(canDiscard)
             .help(label)
             .accessibilityLabel(label)
             .padding(.top, -5)

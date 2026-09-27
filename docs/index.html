@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recordo · Remember the terms you look up in Claude Code</title>
+<meta name="description" content="Recordo is a macOS menu bar app that turns the terms you ask Claude Code about into four-choice quizzes, then asks you again as you start to forget.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#111622">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Recordo">
+<meta property="og:description" content="A macOS menu bar app that quizzes you on the terms you asked Claude Code about.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<script>document.documentElement.classList.add('js');</script>
+<style>
+/* Page colors come from icon.svg. The mockups use the dark values in Sources/RecordoKit/Theme.swift, so they match the app. */
+:root {
+  color-scheme: dark;
+  --page: #111622; --edge: #303b58;
+  --ink: #fffdf7; --copy: #d8d5ce; --dim: #a3a8b8;
+  --brass: #ffb354; --copper: #d5793d; --pale: #ffe2a2;
+  --hair: rgb(255 224 174 / .13);
+  --window: #1c1c1e; --inset: #2c2c2e; --text: #f5f5f7; --secondary: #b5b5bb; --line: #454549;
+  --action: #0071e3; --success: #79d794; --correct-face: #173c29;
+  --serif: ui-serif, "New York", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --spring: cubic-bezier(.22, 1, .36, 1);
+  --pop: cubic-bezier(.34, 1.56, .64, 1);
+  /* The app icon's leather tile, used as the desktop wallpaper behind the mockups. */
+  --wall: radial-gradient(70% 60% at 28% 18%, rgba(174, 112, 75, .38), transparent 70%),
+          radial-gradient(60% 60% at 88% 92%, rgba(100, 96, 124, .35), transparent 70%),
+          linear-gradient(155deg, #303b58, #20283f 48%, #111622);
+}
+@media (prefers-contrast: more) {
+  :root { --copy: var(--ink); --dim: var(--ink); --secondary: var(--text); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+* { box-sizing: border-box; }
+html { scroll-padding-top: 72px; background: var(--page); }
+/* The icon's warm and violet light, once, behind the top of the page. */
+body { margin: 0; background: radial-gradient(900px 620px at 12% -80px, rgb(174 112 75 / .24), transparent 70%) no-repeat, radial-gradient(760px 560px at 92% 40px, rgb(100 96 124 / .22), transparent 70%) no-repeat, var(--page); color: var(--copy); font: 17px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p, ol, ul, pre { margin: 0; }
+h1, h2 { color: var(--ink); font-family: var(--serif); font-weight: 400; text-wrap: balance; }
+h2 { max-width: 20ch; font-size: clamp(34px, 4.6vw, 52px); line-height: 1.08; letter-spacing: -.012em; }
+h1 em, h2 em { color: var(--brass); font-style: italic; }
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  /* The padding keeps the italic's last stroke inside the clipped gradient; the margin gives the space back. */
+  h1 em, h2 em { margin-right: -.08em; padding-right: .08em; background: linear-gradient(100deg, var(--pale), var(--brass) 45%, var(--copper)); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+}
+a { color: var(--pale); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; border-radius: 6px; }
+::selection { background: rgb(255 179 84 / .32); color: var(--ink); }
+code, kbd { font: .88em/1 var(--mono); }
+:not(pre) > code, kbd { padding: .16em .42em; border-radius: 6px; background: rgb(255 253 247 / .08); color: var(--ink); white-space: nowrap; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+.more svg { width: 12px; height: 12px; margin-left: 5px; vertical-align: -1px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.more:hover { text-decoration: none; }
+.more:hover span { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------- nav ---------- */
+.nav { position: sticky; top: 0; z-index: 10; background: rgb(17 22 34 / .74); -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%); border-bottom: 1px solid var(--hair); }
+.nav-in { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font: 400 22px/1 var(--serif); }
+.brand:hover { text-decoration: none; }
+.nav nav { display: flex; align-items: center; gap: 22px; font-size: 14px; }
+.nav nav a { color: var(--copy); }
+.nav nav a:hover { color: var(--ink); text-decoration: none; }
+.nav nav .pill { display: inline-flex; align-items: center; min-height: 34px; padding: 0 16px; border: 1px solid rgb(255 179 84 / .5); border-radius: 999px; color: var(--pale); transition: background-color .2s ease; }
+.nav nav .pill:hover { background: rgb(255 179 84 / .1); }
+
+/* ---------- hero ---------- */
+.hero { padding-top: 96px; }
+.hero-in { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 40px; align-items: start; }
+.sigil { position: relative; isolation: isolate; width: 112px; height: 112px; margin-top: 6px; }
+.sigil img { display: block; width: 100%; height: 100%; }
+.sigil::before { content: ""; position: absolute; inset: -50%; z-index: -1; background: radial-gradient(closest-side, rgb(255 179 84 / .24), transparent); }
+/* A band of light crosses the icon's tile once, inset to the tile's edge in icon.svg. */
+.glint { position: absolute; inset: 8%; overflow: hidden; border-radius: 24%; pointer-events: none; }
+.glint::after { content: ""; position: absolute; top: -20%; bottom: -20%; left: 0; width: 45%; background: linear-gradient(90deg, transparent, rgb(255 236 200 / .42), transparent); mix-blend-mode: screen; transform: translateX(-130%) skewX(-16deg); }
+h1 { font-size: clamp(46px, 7.4vw, 88px); line-height: 1; letter-spacing: -.02em; }
+.lead { max-width: 32em; margin-top: 24px; font-size: clamp(19px, 2.1vw, 22px); line-height: 1.45; }
+.cta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; margin-top: 32px; }
+.btn { display: inline-flex; align-items: center; min-height: 48px; padding: 0 28px; border-radius: 999px; background: linear-gradient(180deg, #ffc46f, #f29a48); color: #1d1206; font-weight: 600; box-shadow: 0 10px 28px -10px rgb(255 179 84 / .6), inset 0 1px 0 rgb(255 255 255 / .45); transition: transform .25s var(--spring), filter .15s ease; }
+.btn:hover { text-decoration: none; filter: brightness(1.06); }
+.btn:active { transform: scale(.97); filter: brightness(.94); transition-duration: 0s; }
+.fine { margin-top: 18px; color: var(--dim); font-size: 14px; }
+@media (prefers-reduced-motion: no-preference) {
+  .sigil, .hero-text > * { animation: enter .9s var(--spring) both; }
+  .hero-text > :nth-child(1) { animation-delay: .08s; }
+  .hero-text > :nth-child(2) { animation-delay: .16s; }
+  .hero-text > :nth-child(3) { animation-delay: .24s; }
+  .hero-text > :nth-child(4) { animation-delay: .3s; }
+  .glint::after { animation: glint 1.2s cubic-bezier(.45, 0, .25, 1) 1s both; }
+}
+@keyframes enter { from { opacity: 0; transform: translateY(12px); } }
+@keyframes glint { to { transform: translateX(330%) skewX(-16deg); } }
+
+/* ---------- demo: a desktop with Claude Code in a terminal and Recordo's quiz panel ---------- */
+.demo-wrap { max-width: 1088px; margin: 72px auto 0; padding: 0 24px; }
+.demo-bar { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.demo-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 104px; min-height: 44px; padding: 0 18px; border: 1px solid var(--hair); border-radius: 999px; background: rgb(255 253 247 / .05); color: var(--ink); font: 500 14px/1 var(--sans); cursor: pointer; transition: transform .25s var(--spring), background-color .15s ease; }
+.demo-button:hover { background: rgb(255 253 247 / .09); }
+.demo-button[hidden] { display: none; }
+.demo-button svg { width: 13px; height: 13px; }
+.demo-button:active { transform: scale(.97); background: rgb(255 253 247 / .12); transition-duration: 0s; }
+.demo-button:not([data-state="ready"]) .i-play,
+.demo-button:not([data-state="playing"]) .i-skip,
+.demo-button:not([data-state="done"]) .i-replay { display: none; }
+.demo { position: relative; height: 680px; overflow: hidden; isolation: isolate; border-radius: 20px; background: var(--wall); box-shadow: 0 0 0 1px var(--hair), 0 50px 110px -50px rgb(255 179 84 / .32), 0 30px 60px -30px rgb(0 0 0 / .7); font-family: var(--sans); }
+.no-anim, .no-anim * { transition: none !important; animation: none !important; }
+
+.menubar { position: absolute; inset: 0 0 auto; z-index: 3; display: flex; align-items: center; justify-content: flex-end; gap: 16px; height: 28px; padding: 0 16px; background: rgba(16, 20, 32, .32); -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%); color: #fff; font-size: 13px; font-weight: 500; }
+.mb-icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.45; stroke-linecap: round; stroke-linejoin: round; }
+.clock { display: inline-block; font-variant-numeric: tabular-nums; }
+
+.lights { display: flex; gap: 8px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+.lights i:nth-child(2) { background: #febc2e; }
+.lights i:nth-child(3) { background: #28c840; }
+
+.term { position: absolute; left: 5%; top: 64px; display: flex; flex-direction: column; width: min(580px, calc(95% - 388px)); height: 330px; overflow: hidden; border: 1px solid rgba(255, 255, 255, .1); border-radius: 12px; background: #15171c; color: #e6e6e9; box-shadow: 0 26px 60px rgba(0, 0, 0, .45), 0 2px 8px rgba(0, 0, 0, .25); font: 13px/1.6 var(--mono); }
+.term-bar { position: relative; flex: none; display: flex; align-items: center; height: 30px; padding: 0 12px; background: #23262d; border-bottom: 1px solid rgba(0, 0, 0, .4); }
+.term-title { position: absolute; inset: 0; display: grid; place-items: center; color: #a3a6ad; font: 600 12px/1 var(--sans); }
+.term-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 16px; }
+.welcome { align-self: flex-start; padding: 6px 14px; border: 1px solid #d97757; border-radius: 8px; }
+.spark { color: #d97757; }
+.dim { color: #8b8f98; }
+.transcript { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.t-user { color: #a3a6ad; }
+/* "Thinking" and the reply share one slot, so swapping them doesn't move anything. */
+.t-slot { display: grid; }
+.t-slot > * { grid-area: 1 / 1; }
+.t-think { color: #d97757; opacity: 0; }
+.is-thinking .t-think { opacity: 1; }
+.t-reply { display: flex; gap: 10px; }
+.t-dot { flex: none; width: 7px; height: 7px; margin-top: .62em; border-radius: 50%; background: #e6e6e9; }
+.t-user, .t-reply { opacity: 0; transform: translateY(4px); transition: opacity .25s ease, transform .35s var(--spring); }
+.is-asked .t-user, .is-answered .t-reply { opacity: 1; transform: none; }
+.prompt { flex: none; padding: 7px 12px; border: 1px solid #4a4d55; border-radius: 8px; }
+.caret { display: inline-block; width: 8px; height: 1.15em; vertical-align: -.2em; background: #e6e6e9; animation: blink 1.1s steps(1) infinite; }
+.demo-wrap[data-step="done"] .caret { animation: none; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.fly { position: absolute; left: 0; top: 0; z-index: 4; padding: 9px 14px 8px; border-radius: 9px; background: linear-gradient(160deg, #fffdf7, #f1e5d2); color: #20283f; box-shadow: 0 10px 24px rgba(0, 0, 0, .35); font-size: 16px; font-weight: 600; line-height: 1.2; opacity: 0; pointer-events: none; }
+.fly small { display: block; margin-top: 2px; color: #8a6f52; font-size: 10px; font-weight: 500; }
+/* Brass motes trail the card, and a ring marks where it lands. */
+.mote, .ring { position: absolute; left: 0; top: 0; z-index: 4; border-radius: 50%; opacity: 0; pointer-events: none; }
+.mote { width: 6px; height: 6px; margin: -3px 0 0 -3px; background: var(--pale); box-shadow: 0 0 8px 2px rgb(255 179 84 / .7); }
+.ring { width: 30px; height: 30px; margin: -15px 0 0 -15px; border: 1.5px solid var(--brass); }
+.lapse { position: absolute; right: 24px; top: 44px; z-index: 4; padding: 6px 14px; border-radius: 999px; background: rgba(255, 255, 255, .16); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); color: #fff; font-size: 13px; font-weight: 600; opacity: 0; transform: translateY(-6px); transition: opacity .3s ease, transform .4s var(--spring); }
+.is-lapse .lapse { opacity: 1; transform: none; }
+.cursor { position: absolute; left: 0; top: 0; z-index: 5; width: 22px; height: 22px; opacity: 0; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .35)); }
+
+/* Quiz panel: sizes from QuizStyle.swift (340pt wide, 20pt gutter, 48pt options). */
+.panel { position: absolute; right: 24px; bottom: 24px; z-index: 2; width: 340px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); border-radius: 16px; background: color-mix(in srgb, var(--window) 84%, transparent); -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%); box-shadow: 0 22px 56px rgba(0, 0, 0, .35), 0 2px 8px rgba(0, 0, 0, .18); color: var(--text); font-size: 14px; line-height: 1.45; opacity: 0; transform: translate(10px, 14px); transition: opacity .4s var(--spring), transform .4s var(--spring); }
+/* QuizEnter in QuizStyle.swift: a spring with response 0.30 and damping 1, sampled over 0.4s. */
+@supports (transition-timing-function: linear(0, 1)) {
+  .panel { transition-timing-function: linear(0, .067 5%, .205 10%, .358 15%, .499 20%, .619 25%, .715 30%, .79 35%, .847 40%, .921 50%, .961 60%, .981 70%, .991 80%, 1); }
+}
+.is-quiz .panel { opacity: 1; transform: none; }
+.p-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 8px; font-size: 13px; font-weight: 600; }
+.p-close { width: 24px; height: 24px; margin: -4px -6px -4px 0; padding: 6px; fill: none; stroke: var(--secondary); stroke-width: 2.4; stroke-linecap: round; }
+.p-body { padding: 0 20px 16px; }
+.p-meta { color: var(--secondary); font-size: 11px; }
+.p-term { margin: 4px 0 16px; font-size: 22px; font-weight: 600; line-height: 1.25; letter-spacing: -.3px; }
+.options { display: grid; gap: 8px; }
+.option { display: flex; align-items: flex-start; gap: 10px; min-height: 48px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--inset); opacity: 0; transform: translateY(4px); transition: opacity .2s ease, transform .3s var(--spring), background-color .2s ease, border-color .2s ease; }
+.is-quiz .option { opacity: 1; transform: none; }
+.is-quiz .option:nth-child(1) { transition-delay: .12s; }
+.is-quiz .option:nth-child(2) { transition-delay: .15s; }
+.is-quiz .option:nth-child(3) { transition-delay: .18s; }
+.is-quiz .option:nth-child(4) { transition-delay: .21s; }
+.option.is-pressed { transform: scale(.985); transition-duration: 0s; }
+.key { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--line); border-radius: 6px; color: var(--secondary); font-size: 11px; font-weight: 600; }
+.o-text { flex: 1; }
+.mark { flex: none; width: 14px; height: 14px; margin-top: 3px; fill: none; stroke: var(--success); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transform: scale(.6); transition: opacity .3s ease, transform .3s var(--pop); }
+.demo.is-picked .option { opacity: .6; transition-delay: 0s; }
+.is-picked .option.correct { opacity: 1; border-color: var(--success); background: var(--correct-face); }
+.is-picked .correct .mark { opacity: 1; transform: none; }
+.quiet { display: inline-block; padding: 6px 10px; border-radius: 8px; color: var(--action); font-size: 13px; }
+.idk { margin-top: 8px; }
+.p-foot { padding: 12px 20px; border-top: 1px solid var(--line); background: var(--inset); }
+.verdict { display: none; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin-bottom: 8px; }
+.v-title { display: inline-flex; align-items: center; gap: 3px; color: var(--success); font-weight: 600; }
+.v-title svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
+.v-source { color: var(--secondary); font-size: 11px; }
+.p-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.discard, .primary { display: none; }
+.primary { align-items: center; gap: 6px; margin-left: auto; padding: 7px 14px; border-radius: 999px; background: var(--action); color: #fff; font-size: 13px; font-weight: 600; }
+.space { padding: 1px 4px; border: 1px solid rgba(255, 255, 255, .7); border-radius: 4px; font-size: 11px; font-weight: 400; }
+.is-picked .idk, .is-picked .later { display: none; }
+.is-picked .verdict { display: flex; animation: rise .25s var(--spring) .06s both; }
+.is-picked .discard { display: inline-block; animation: fade .2s ease both; }
+.is-picked .primary { display: inline-flex; animation: fade .2s ease both; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+@keyframes fade { from { opacity: 0; } }
+
+/* The three steps light up in turn as the demo plays. */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 32px; padding: 0; list-style: none; counter-reset: step; font-size: 15px; line-height: 1.55; }
+.steps li { padding-top: 16px; border-top: 1px solid var(--hair); color: var(--dim); transition: color .3s ease, border-color .3s ease; }
+.steps li::before { counter-increment: step; content: counter(step, lower-roman) "."; display: block; margin-bottom: 8px; color: var(--dim); font: italic 400 24px/1 var(--serif); transition: color .3s ease; }
+.demo-wrap[data-step="done"] .steps li { color: var(--copy); }
+.demo-wrap[data-step="done"] .steps li::before { color: var(--brass); }
+.demo-wrap[data-step="1"] .steps li:nth-child(1),
+.demo-wrap[data-step="2"] .steps li:nth-child(2),
+.demo-wrap[data-step="3"] .steps li:nth-child(3) { border-top-color: var(--brass); color: var(--ink); }
+.demo-wrap[data-step="1"] .steps li:nth-child(1)::before,
+.demo-wrap[data-step="2"] .steps li:nth-child(2)::before,
+.demo-wrap[data-step="3"] .steps li:nth-child(3)::before { color: var(--brass); }
+
+/* ---------- sections ---------- */
+.band { padding: 136px 0 0; }
+.intro { max-width: 34em; margin-top: 20px; font-size: 20px; line-height: 1.5; }
+.js .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .9s var(--spring); }
+.js .reveal.is-in { opacity: 1; transform: none; }
+
+/* Leitner track: Box 0 is due now, then each right answer waits longer. */
+.track { position: relative; margin-top: 56px; }
+.track ol { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); padding: 0; list-style: none; }
+.track ol::before { content: ""; position: absolute; left: calc(100% / 14); right: calc(100% / 14); top: 26px; height: 1px; background: linear-gradient(90deg, rgb(255 179 84 / .2), rgb(255 179 84 / .6)); }
+.track li { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+.node { position: relative; flex: none; width: 52px; height: 52px; border: 1px solid rgb(255 179 84 / .4); border-radius: 14px; background: var(--page); box-shadow: inset 0 0 0 4px rgb(255 179 84 / .05); transition: border-color .3s ease, box-shadow .4s ease; }
+.node.is-lit { border-color: var(--brass); box-shadow: 0 0 24px -2px rgb(255 179 84 / .5), inset 0 0 0 4px rgb(255 179 84 / .12); }
+.track b { display: block; color: var(--ink); font: 400 22px/1.1 var(--serif); }
+.track small { display: block; margin-top: 4px; color: var(--dim); font-size: 12px; }
+.token { position: absolute; left: 0; top: 0; z-index: 1; display: grid; place-items: center; width: 24px; height: 32px; border-radius: 5px; background: linear-gradient(160deg, #fffdf7, #efe2cc); box-shadow: 0 6px 14px rgb(0 0 0 / .45); pointer-events: none; transition: box-shadow .2s ease; }
+.token[hidden] { display: none; }
+.token svg { width: 14px; height: 14px; fill: none; stroke: var(--copper); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.token .x { display: none; stroke: #c2412d; }
+.token.is-miss { box-shadow: 0 0 0 2px #ff746d, 0 6px 14px rgb(0 0 0 / .45); }
+.token.is-miss .x { display: block; }
+.token.is-miss .check { display: none; }
+/* After the climb the card rests in the last box, so a resize can't strand it. */
+.token.parked { left: 50%; top: 50%; translate: -50% -50%; }
+
+.manners { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 48px; padding: 0; list-style: none; }
+.manners li { padding-top: 20px; border-top: 1px solid var(--hair); }
+.manners svg { display: block; width: 26px; height: 26px; margin-bottom: 14px; fill: none; stroke: var(--brass); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 620px); gap: 48px; align-items: center; }
+/* Cards window mockup, from design/sessions/cards. It keeps its real 640px layout and scales to fit. */
+.frame { position: relative; height: calc(560px * var(--k, 1)); overflow: hidden; border-radius: 20px; background: var(--wall); box-shadow: 0 0 0 1px var(--hair), 0 40px 90px -45px rgb(255 179 84 / .28); }
+.cards-win { position: absolute; top: calc(48px * var(--k, 1)); left: 50%; width: 640px; height: 620px; transform: translateX(-50%) scale(var(--k, 1)); transform-origin: top center; border-radius: 12px; background: var(--window); color: var(--text); box-shadow: 0 28px 70px rgba(0, 0, 0, .4), 0 2px 10px rgba(0, 0, 0, .2); }
+.cards-bar { display: flex; align-items: center; height: 28px; padding: 0 14px; }
+.cards-col { max-width: 600px; margin: 0 auto; padding: 0 32px; }
+.cards-title { display: flex; align-items: baseline; gap: 10px; }
+.cards-title strong { font-size: 26px; line-height: 1.15; font-weight: 700; letter-spacing: -.02em; }
+.cards-title span, .sec-head span { color: var(--secondary); font-size: 13px; }
+.search { display: flex; align-items: center; gap: 8px; min-height: 36px; margin-top: 12px; padding: 4px 11px; border-radius: 10px; background: var(--inset); color: var(--secondary); font-size: 13px; }
+.search svg, .trash { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sec-head { display: flex; align-items: baseline; gap: 9px; margin-top: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.sec-head strong { font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 15px; line-height: 1.45; }
+.row b { font-size: 16px; line-height: 1.3; font-weight: 600; letter-spacing: -.01em; }
+.row p { margin-top: 3px; font-size: 13px; line-height: 1.6; }
+.row small { display: block; margin-top: 6px; color: var(--secondary); font-size: 12px; line-height: 1.45; }
+.row small + small { margin-top: 1px; }
+.row em { color: var(--text); font-style: normal; font-weight: 600; }
+.trash { width: 16px; height: 16px; margin: 3px 8px 0; color: var(--secondary); }
+
+.pair { display: grid; grid-template-columns: 5fr 7fr; gap: 48px; align-items: start; }
+.pair p { font-size: 20px; line-height: 1.5; }
+
+/* ---------- install ---------- */
+pre { margin-top: 32px; padding: 22px 26px; overflow-x: auto; border: 1px solid var(--hair); border-radius: 16px; background: #0b0e17; color: #e6e6e9; font: 14px/1.75 var(--mono); }
+pre .c { color: #8b8f98; }
+.notes { max-width: 44em; margin-top: 28px; padding-left: 1.1em; }
+.notes li::marker { color: var(--brass); }
+.notes li + li { margin-top: 10px; }
+.readme { margin-top: 24px; }
+
+.foot { margin-top: 136px; padding: 28px 0 44px; border-top: 1px solid var(--hair); color: var(--dim); font-size: 13px; }
+.foot p { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 20px; }
+.foot .brand-name { color: var(--ink); font: 400 17px/1 var(--serif); }
+.foot a { color: var(--dim); }
+.foot a:hover { color: var(--ink); }
+
+/* ---------- small screens ---------- */
+@media (max-width: 1023px) {
+  /* The terminal and the 340px panel can't sit side by side, so they overlap like windows do. */
+  /* minmax(0, 1fr) lets the 340px panel shrink on screens narrower than it. */
+  .demo { display: grid; grid-template-columns: minmax(0, 1fr); height: auto; min-height: 700px; padding: 48px 24px 24px; }
+  .term, .panel { grid-area: 1 / 1; }
+  .term { position: relative; left: auto; top: auto; align-self: start; width: min(100%, 560px); height: auto; min-height: 300px; }
+  .panel { position: relative; right: auto; bottom: auto; align-self: end; justify-self: end; max-width: 100%; }
+  .lapse { right: 16px; top: 38px; }
+  .split { grid-template-columns: 1fr; gap: 40px; }
+}
+@media (max-width: 760px) {
+  .wrap { padding: 0 16px; }
+  .hero { padding-top: 56px; }
+  .hero-in { grid-template-columns: 1fr; gap: 24px; }
+  .sigil { width: 80px; height: 80px; margin-top: 0; }
+  .band { padding-top: 96px; }
+  /* 12px gutters leave room for the panel's real 340px width on a 390px screen. */
+  .demo-wrap { margin-top: 48px; padding: 0 12px; }
+  /* Tall enough that the question in the terminal stays visible above the panel. */
+  .demo { min-height: 790px; padding: 44px 12px 12px; border-radius: 16px; }
+  .term { width: 100%; font-size: 12px; }
+  .lapse { right: 12px; }
+  .steps, .manners { grid-template-columns: 1fr; gap: 20px; }
+  .steps { padding: 0 4px; }
+  .pair { grid-template-columns: 1fr; gap: 20px; }
+  .intro, .pair p { font-size: 18px; }
+  .frame { border-radius: 16px; }
+  .foot { margin-top: 96px; }
+}
+/* On a phone the seven boxes stack, and the line runs down their left edge. */
+@media (max-width: 640px) {
+  .track { margin-top: 40px; }
+  .track ol { grid-template-columns: 1fr; gap: 14px; }
+  .track ol::before { left: 26px; right: auto; top: 26px; bottom: 26px; width: 1px; height: auto; background: linear-gradient(180deg, rgb(255 179 84 / .2), rgb(255 179 84 / .6)); }
+  .track li { flex-direction: row; gap: 18px; text-align: left; }
+  .track b, .track small { display: inline; margin: 0; }
+  .track small { margin-left: 8px; }
+}
+@media (max-width: 480px) {
+  .nav nav a:first-child { display: none; }
+}
+/* Under 360px the panel wraps into more lines, so the demo grows to keep the question in view. */
+@media (max-width: 359px) {
+  .demo { min-height: 960px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-user, .t-reply, .panel, .option, .mark, .lapse { transform: none !important; }
+  .panel { transition: opacity .22s ease-out; }
+  .is-picked .verdict { animation-name: fade; }
+  .caret { animation: none; }
+  .btn:active, .demo-button:active { transform: none; }
+  .js .reveal { opacity: 1; transform: none; transition: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .nav { background: var(--page); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .menubar { background: #1a2030; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .panel { background: var(--window); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .lapse { background: #30394e; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top"><img src="icon.svg" alt="" width="30" height="30">Recordo</a>
+    <nav aria-label="Page">
+      <a href="https://github.com/impelcrypto/recordo">GitHub</a>
+      <a href="#pricing">Pricing</a>
+      <a class="pill" href="#install">Install</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap hero-in">
+      <div class="sigil"><img src="icon.svg" alt="" width="112" height="112"><span class="glint"></span></div>
+      <div class="hero-text">
+        <h1>Let it come <em>back</em> to you.</h1>
+        <p class="lead">Recordo is a macOS menu bar app that quizzes you on the terms you asked Claude Code about before you forget them.</p>
+        <div class="cta">
+          <a class="btn" href="#install">Install</a>
+          <a class="more" href="https://github.com/impelcrypto/recordo"><span>View on GitHub</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a>
+        </div>
+        <p class="fine">Open source</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- The markup holds the finished state, so the demo still reads without JavaScript. -->
+  <div class="demo-wrap" data-step="done">
+    <div class="demo-bar">
+      <button class="demo-button" type="button" data-state="ready" hidden>
+        <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg>
+        <svg class="i-skip" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5v14l10.5-7zM16.5 5h2.5v14h-2.5z" fill="currentColor"/></svg>
+        <svg class="i-replay" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5M4.5 3.5V8H9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="demo-label">Play</span>
+      </button>
+    </div>
+    <div class="demo is-asked is-answered is-quiz is-picked" role="img" aria-label="Demo: in a terminal, someone asks Claude Code “what is LCP?” and Claude explains it. At Recordo’s daily sync, the answer becomes a card and drops into Recordo in the menu bar. The next day, a Recordo panel in the bottom-right corner asks what LCP means with four choices, and they pick the right one.">
+      <div class="menubar">
+        <svg class="mb-icon" viewBox="0 0 18 18" aria-hidden="true"><path d="M3.8 8.5V2.35C3.8 1.9 4.15 1.55 4.6 1.55H13.4C13.85 1.55 14.2 1.9 14.2 2.35V8.5"/><path d="M5.5 5.2L8.1 7.3L12.4 3.5" stroke-width="1.3"/><path d="M2.3 9H15.7L14.8 15.25C14.73 15.78 14.36 16.1 13.8 16.1H4.2C3.64 16.1 3.27 15.78 3.2 15.25L2.3 9Z"/></svg>
+        <span class="clock">Fri 15:40</span>
+      </div>
+
+      <div class="term">
+        <div class="term-bar"><span class="lights"><i></i><i></i><i></i></span><span class="term-title">storefront</span></div>
+        <div class="term-body">
+          <div class="welcome"><span class="spark">✻</span> Welcome to Claude Code!<br><span class="dim">cwd: ~/storefront</span></div>
+          <div class="transcript">
+            <p class="t-user">&gt; what is LCP?</p>
+            <div class="t-slot">
+              <p class="t-think">✻ Thinking…</p>
+              <p class="t-reply"><span class="t-dot"></span><span>LCP (Largest Contentful Paint) is the time until the largest image or text block in the viewport renders. It’s one of the Core Web Vitals, and under 2.5 seconds counts as good.</span></p>
+            </div>
+          </div>
+          <div class="prompt">&gt; <span class="typed"></span><span class="caret"></span></div>
+        </div>
+      </div>
+
+      <div class="fly">LCP<small>web-performance</small></div>
+      <i class="ring"></i>
+      <div class="lapse">The next day</div>
+
+      <div class="panel">
+        <div class="p-head"><span>Review 1/1</span><svg class="p-close" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></div>
+        <div class="p-body">
+          <p class="p-meta">web-performance · Box 0</p>
+          <p class="p-term">LCP</p>
+          <div class="options">
+            <div class="option"><span class="key">A</span><span class="o-text">Time from the request being sent until the first byte of the HTML response arrives</span></div>
+            <div class="option correct"><span class="key">B</span><span class="o-text">Time until the largest image or text block in the viewport finishes rendering</span><svg class="mark" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+            <div class="option"><span class="key">C</span><span class="o-text">Total amount of unexpected layout movement of visible elements during page load</span></div>
+            <div class="option"><span class="key">D</span><span class="o-text">Time between a user’s first click and the moment the browser responds to that input</span></div>
+          </div>
+          <span class="quiet idk">I don’t know</span>
+        </div>
+        <div class="p-foot">
+          <p class="verdict"><span class="v-title"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Correct</span><span class="v-source">9/24 · storefront · asked in chat</span></p>
+          <div class="p-actions">
+            <span class="quiet later">Later</span>
+            <span class="quiet discard">Discard This Card</span>
+            <span class="primary">Close <span class="space">␣</span></span>
+          </div>
+        </div>
+      </div>
+
+      <svg class="cursor" viewBox="0 0 24 24"><path d="M5 3v15.2l4.1-3.9 2.6 5.9 2.7-1.2-2.6-5.8h5.6z" fill="#000" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+    </div>
+
+    <ol class="steps">
+      <li>Ask Claude Code what a term means, as you already do. <code>/btw</code> and <code>/term</code> questions count too.</li>
+      <li>Once a day, Claude turns the answer you read into a card: a short definition and three wrong answers that sound right.</li>
+      <li>Three due cards (you can set up to 10) appear in the corner, at most once every three hours by default. Your keystrokes stay in the app you’re using.</li>
+    </ol>
+  </div>
+
+  <section class="band">
+    <div class="wrap reveal">
+      <h2>Reviews timed to the <em>forgetting curve</em>.</h2>
+      <p class="intro">Recordo spaces reviews along Ebbinghaus’s forgetting curve and asks again as a term starts to fade, so it sticks. Each correct answer moves the card up a box, and it waits longer before it’s due again.</p>
+      <div class="track">
+        <ol aria-label="Wait before the next quiz, by box">
+          <li><span class="node"></span><span><b>Now</b><small>Box 0</small></span></li>
+          <li><span class="node"></span><span><b>4 hours</b><small>Box 1</small></span></li>
+          <li><span class="node"></span><span><b>1 day</b><small>Box 2</small></span></li>
+          <li><span class="node"></span><span><b>3 days</b><small>Box 3</small></span></li>
+          <li><span class="node"></span><span><b>7 days</b><small>Box 4</small></span></li>
+          <li><span class="node"></span><span><b>14 days</b><small>Box 5</small></span></li>
+          <li><span class="node"></span><span><b>30 days</b><small>Box 6</small></span></li>
+        </ol>
+        <span class="token" aria-hidden="true" hidden><svg class="check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><svg class="x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap reveal">
+      <h2>Recordo stays out of your way.</h2>
+      <ul class="manners">
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.2A8 8 0 1 1 9.8 4.5a6.4 6.4 0 0 0 9.7 9.7z"/></svg>Automatic quizzes skip your Quiet Hours, full-screen apps, and any Focus you turn on.</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>“Later” closes the panel, and the same cards come back at the next quiz.</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7M10.2 10.5v5.5M13.8 10.5v5.5"/></svg>If Claude got a definition wrong, discard the card after you answer.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap split reveal">
+      <div>
+        <h2>Every card in one window.</h2>
+        <p class="intro">Search terms and definitions and see when each card comes back. <kbd>⌃⌥⌘C</kbd> opens the window from any app.</p>
+      </div>
+      <div class="frame" role="img" aria-label="The Recordo Cards window. It shows 16 cards, 14 of them under Learning, such as LCP, idempotent, and hydration, each with its definition, box, next review time, and where you asked about it.">
+        <div class="cards-win">
+          <div class="cards-bar"><span class="lights"><i></i><i></i><i></i></span></div>
+          <div class="cards-col">
+            <div class="cards-title"><strong>Cards</strong><span>16 cards</span></div>
+            <div class="search"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20"/></svg>Search terms and definitions</div>
+            <div class="sec-head"><strong>Learning</strong><span>14</span></div>
+            <div class="row"><div><b>LCP</b><p>Time until the largest image or text block in the viewport finishes rendering</p><small>web-performance · Box 0 · <em>Due now</em></small><small>9/24 · storefront · asked in chat</small></div><svg class="trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7"/></svg></div>
+            <div class="row"><div><b>idempotent</b><p>Running it once or many times leaves the system in the same final state and result</p><small>api-design · Box 0 · <em>Due now</em></small><small>9/23 · payments-api · asked via /btw</small></div><svg class="trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7"/></svg></div>
+            <div class="row"><div><b>hydration</b><p>Attaching event handlers and state to server-rendered HTML so the page becomes usable</p><small>react · Box 1 · Next: today at 18:10</small><small>9/23 · storefront · asked in chat</small></div><svg class="trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7"/></svg></div>
+            <div class="row"><div><b>CORS preflight</b><p>An OPTIONS request the browser sends first to ask if a cross-origin request is allowed</p><small>browser-security · Box 2 · <em>Due now</em></small><small>9/21 · storefront · asked via /term</small></div><svg class="trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7"/></svg></div>
+            <div class="row"><div><b>backpressure</b><p>A slow consumer signaling a fast producer to slow down so buffers don’t grow unbounded</p><small>streams · Box 2 · Next: tomorrow at 11:05</small><small>9/19 · sync-service · asked in chat</small></div><svg class="trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap pair reveal">
+      <h2>Your cards stay on your Mac.</h2>
+      <p>Recordo keeps them in one JSON file in your Application Support folder and has no account or server of its own. During a sync, it sends your new prompts, parts of the conversations around your questions, and your existing card tags to Claude through your own <code>claude</code> CLI, with tools, hooks, and MCP servers turned off.</p>
+    </div>
+  </section>
+
+  <section class="band" id="pricing">
+    <div class="wrap reveal">
+      <h2>Pricing</h2>
+      <p class="intro"><s>$4.99 a month.</s> Just kidding, it’s free. Syncs run on your own Claude Code and count toward its usage.</p>
+    </div>
+  </section>
+
+  <section class="band" id="install">
+    <div class="wrap reveal">
+      <h2>Install</h2>
+      <p class="intro">Build Recordo from source. You need macOS 14 or later, a Swift 6 toolchain (Xcode or the Command Line Tools), and the Claude Code CLI, logged in.</p>
+<pre><code>git clone https://github.com/impelcrypto/recordo.git
+cd recordo
+make install        <span class="c"># build, copy to /Applications, and launch</span>
+make install-skill  <span class="c"># optional: adds the /term skill</span></code></pre>
+      <ul class="notes">
+        <li>The first launch syncs your last 30 days of questions in about 30 minutes. A percentage next to the menu bar icon shows the progress.</li>
+        <li>Recordo and its cards use English, or Japanese if that’s your Mac’s first language.</li>
+        <li>To pause quizzes during Focus, give Recordo Full Disk Access with the button on the Quizzes page in Settings. Recordo can’t see a Focus that starts on a schedule, so cover those hours with Quiet Hours.</li>
+      </ul>
+      <p class="readme"><a class="more" href="https://github.com/impelcrypto/recordo#readme"><span>Setup details and troubleshooting in the README</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p><span class="brand-name">Recordo</span><a href="https://github.com/impelcrypto/recordo/blob/master/LICENSE">MIT License</a><a href="https://github.com/impelcrypto/recordo">Source on GitHub</a></p>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const wrap = document.querySelector('.demo-wrap');
+  const demo = wrap.querySelector('.demo');
+  const button = wrap.querySelector('.demo-button');
+  const label = button.querySelector('.demo-label');
+  const $ = (selector) => demo.querySelector(selector);
+  const typed = $('.typed'), clock = $('.clock'), icon = $('.mb-icon'), reply = $('.t-reply');
+  const fly = $('.fly'), ring = $('.ring'), cursor = $('.cursor'), correct = $('.option.correct');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const SPRING = 'cubic-bezier(.22, 1, .36, 1)';
+  const STAGES = ['asked', 'answered', 'quiz', 'picked'];
+  const LABELS = { ready: 'Play', playing: 'Skip', done: 'Replay' };
+  const running = [];
+  const timers = new Set();
+  let run = 0, playing = false, paused = false, onscreen = false, autoplayed = false;
+
+  // Each play() takes a new run id; an older run stops at its next step.
+  const check = (id) => { if (id !== run) throw 0; };
+  // Waits stop counting while the demo is paused, so it picks up where the viewer left it.
+  const wait = (ms, id) => new Promise((resolve) => {
+    const timer = { left: ms };
+    timer.start = () => {
+      timer.at = performance.now();
+      timer.handle = setTimeout(() => { timers.delete(timer); resolve(); }, timer.left);
+    };
+    timer.stop = () => { clearTimeout(timer.handle); timer.left -= performance.now() - timer.at; };
+    timers.add(timer);
+    if (!paused) timer.start();
+  }).then(() => check(id));
+  const animate = (el, keyframes, options) => {
+    const animation = el.animate(keyframes, { fill: 'forwards', ...options });
+    running.push(animation);
+    if (paused) animation.pause();
+    // A skip cancels animations nobody awaits; mark those rejections handled.
+    animation.finished.catch(() => {});
+    return animation.finished;
+  };
+  const add = (...names) => names.forEach((name) => demo.classList.add('is-' + name));
+  const at = (el) => {
+    const box = demo.getBoundingClientRect(), r = el.getBoundingClientRect();
+    return { x: r.left - box.left, y: r.top - box.top, w: r.width, h: r.height };
+  };
+  const setButton = (state) => { button.dataset.state = state; label.textContent = LABELS[state]; };
+
+  function setPaused(on) {
+    if (on === paused) return;
+    paused = on;
+    timers.forEach((timer) => (on ? timer.stop() : timer.start()));
+    running.forEach((animation) => {
+      if (on && animation.playState === 'running') animation.pause();
+      if (!on && animation.playState === 'paused') animation.play();
+    });
+  }
+  const update = () => setPaused(playing && (!onscreen || document.hidden));
+
+  function render(stages, time) {
+    running.splice(0).forEach((animation) => animation.cancel());
+    timers.forEach((timer) => clearTimeout(timer.handle));
+    timers.clear();
+    demo.classList.add('no-anim');
+    demo.classList.remove('is-thinking', 'is-lapse', ...STAGES.map((stage) => 'is-' + stage));
+    correct.classList.remove('is-pressed');
+    add(...stages);
+    typed.textContent = '';
+    clock.textContent = time;
+    demo.offsetWidth; // apply the jump before transitions come back
+    demo.classList.remove('no-anim');
+  }
+
+  function stop(skipped) {
+    if (skipped) { run++; render(STAGES, 'Fri 15:40'); }
+    playing = false;
+    update();
+    wrap.dataset.step = 'done';
+    setButton('done');
+  }
+
+  function mote(x, y) {
+    const el = document.createElement('i');
+    el.className = 'mote';
+    demo.append(el);
+    const gone = () => el.remove();
+    animate(el, [
+      { opacity: 0, transform: `translate(${x}px, ${y}px) scale(.4)` },
+      { opacity: 1, transform: `translate(${x}px, ${y - 4}px) scale(1)`, offset: .25 },
+      { opacity: 0, transform: `translate(${x}px, ${y - 14}px) scale(.3)` },
+    ], { duration: 650, easing: 'ease-out' }).then(gone, gone);
+  }
+
+  // Drops motes where the card is every few frames until the returned function is called.
+  function trail(id) {
+    let last = 0, on = true;
+    const step = (now) => {
+      if (!on || id !== run) return;
+      if (!paused && now - last > 40) {
+        last = now;
+        const r = at(fly);
+        mote(r.x + r.w * (.25 + Math.random() * .5), r.y + r.h / 2 + (Math.random() - .5) * 10);
+      }
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+    return () => { on = false; };
+  }
+
+  async function flyCard(id) {
+    if (reduced.matches) return wait(600, id);
+    const from = at(reply), to = at(icon);
+    const x0 = from.x + 20, y0 = from.y - 8;
+    const x1 = to.x + to.w / 2 - fly.offsetWidth / 2, y1 = to.y + to.h / 2 - fly.offsetHeight / 2;
+    const place = (x, y, s) => `translate(${x}px, ${y}px) scale(${s})`;
+    await animate(fly, [{ opacity: 0, transform: place(x0, y0 + 10, .94) }, { opacity: 1, transform: place(x0, y0, 1) }], { duration: 320, easing: SPRING });
+    check(id);
+    await wait(350, id);
+    const stopTrail = trail(id);
+    await animate(fly, [
+      { opacity: 1, transform: place(x0, y0, 1) },
+      { opacity: 1, transform: place((x0 + x1) / 2, y1 + (y0 - y1) * .3, .6), offset: .55 },
+      { opacity: 0, transform: place(x1, y1, .16) },
+    ], { duration: 750, easing: 'cubic-bezier(.45, 0, .25, 1)' });
+    stopTrail();
+    check(id);
+    // A small settle, no overshoot: the menu bar is system chrome, not the show.
+    animate(icon, [{ transform: 'scale(1)' }, { transform: 'scale(1.1)', offset: .35 }, { transform: 'scale(1)' }], { duration: 240, easing: 'ease-out' });
+    const cx = to.x + to.w / 2, cy = to.y + to.h / 2;
+    animate(ring, [
+      { opacity: .9, transform: `translate(${cx}px, ${cy}px) scale(.3)` },
+      { opacity: 0, transform: `translate(${cx}px, ${cy}px) scale(1.5)` },
+    ], { duration: 600, easing: 'cubic-bezier(.2, .7, .3, 1)' });
+  }
+
+  async function tickClock(id) {
+    const dy = reduced.matches ? 0 : 6;
+    await animate(clock, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateY(${-dy}px)` }], { duration: 160, easing: 'ease-in' });
+    check(id);
+    clock.textContent = 'Fri 15:40';
+    await animate(clock, [{ opacity: 0, transform: `translateY(${dy}px)` }, { opacity: 1, transform: 'none' }], { duration: 240, easing: SPRING });
+    check(id);
+  }
+
+  async function pick(id) {
+    if (!reduced.matches) {
+      const r = at(correct);
+      const x = r.x + r.w * .6, y = r.y + r.h * .5;
+      await animate(cursor, [
+        { opacity: 0, transform: `translate(${x - 70}px, ${y + 90}px)` },
+        { opacity: 1, transform: `translate(${x - 60}px, ${y + 76}px)`, offset: .2 },
+        { opacity: 1, transform: `translate(${x}px, ${y}px)` },
+      ], { duration: 900, easing: 'cubic-bezier(.3, 0, .2, 1)' });
+      check(id);
+      correct.classList.add('is-pressed');
+      await wait(150, id);
+      correct.classList.remove('is-pressed');
+    }
+    add('picked');
+    if (!reduced.matches) animate(cursor, [{ opacity: 1 }, { opacity: 0 }], { duration: 300, delay: 1000 });
+  }
+
+  async function play() {
+    const id = ++run;
+    render([], 'Thu 10:12');
+    playing = true;
+    update();
+    setButton('playing');
+    wrap.dataset.step = '1';
+    try {
+      await wait(700, id);
+      for (const letter of 'what is LCP?') {
+        typed.textContent += letter;
+        await wait(55 + Math.random() * 45, id);
+      }
+      await wait(450, id);
+      typed.textContent = '';
+      add('asked');
+      await wait(300, id);
+      demo.classList.add('is-thinking');
+      await wait(1000, id);
+      demo.classList.remove('is-thinking');
+      add('answered');
+      await wait(1700, id);
+      wrap.dataset.step = '2';
+      await flyCard(id);
+      await wait(700, id);
+      wrap.dataset.step = '3';
+      demo.classList.add('is-lapse');
+      await tickClock(id);
+      await wait(1000, id);
+      demo.classList.remove('is-lapse');
+      await wait(250, id);
+      add('quiz');
+      await wait(1500, id);
+      await pick(id);
+      await wait(1300, id);
+      stop(false);
+    } catch (error) {
+      if (id === run) throw error;
+    }
+  }
+
+  button.hidden = false;
+  button.addEventListener('click', () => (playing ? stop(true) : play()));
+  // Turning on Reduce Motion mid-demo jumps to the finished picture instead of finishing the movement.
+  reduced.addEventListener('change', () => { if (reduced.matches && playing) stop(true); });
+  document.addEventListener('visibilitychange', update);
+  if (!reduced.matches) {
+    render([], 'Thu 10:12');
+    wrap.dataset.step = '';
+  }
+  // On a phone the demo can be taller than the screen, so a share of the screen counts as well as a share of the demo.
+  new IntersectionObserver(([entry]) => {
+    const seen = entry.intersectionRatio, height = entry.intersectionRect.height;
+    onscreen = seen >= .15 || height >= innerHeight * .3;
+    if (!autoplayed && !reduced.matches && (seen >= .55 || height >= innerHeight * .5)) {
+      autoplayed = true;
+      play();
+    }
+    update();
+  }, { threshold: [0, .15, .3, .45, .55, .7] }).observe(demo);
+
+  // The Cards mockup keeps its real 640px layout; narrower frames get a scaled copy.
+  const frame = document.querySelector('.frame');
+  new ResizeObserver(([entry]) => {
+    frame.style.setProperty('--k', Math.min(1, (entry.contentRect.width - 32) / 640));
+  }).observe(frame);
+
+  // Sections rise in once as they scroll into view.
+  const reveal = new IntersectionObserver((entries) => entries.forEach((entry) => {
+    if (!entry.isIntersecting) return;
+    entry.target.classList.add('is-in');
+    reveal.unobserve(entry.target);
+  }), { rootMargin: '0px 0px -10% 0px' });
+  document.querySelectorAll('.reveal').forEach((el) => reveal.observe(el));
+
+  // The Leitner card climbs two boxes, misses and drops to the start, then climbs to 30 days.
+  // It runs under five seconds, so it needs no stop control (WCAG 2.2.2).
+  const track = document.querySelector('.track');
+  const token = track.querySelector('.token');
+  const nodes = [...track.querySelectorAll('.node')];
+  const light = (i) => nodes.forEach((node, j) => node.classList.toggle('is-lit', j === i));
+  let parked = false;
+  // Any step that ends after park() throws, so the climb stops where it is.
+  const step = (promise) => promise.then(() => { if (parked) throw 0; });
+  const pause = (ms) => step(new Promise((resolve) => setTimeout(resolve, ms)));
+
+  function park() {
+    parked = true;
+    token.getAnimations().forEach((animation) => animation.cancel());
+    token.classList.remove('is-miss');
+    token.classList.add('parked');
+    nodes[6].append(token);
+    light(6);
+  }
+
+  // Boxes are measured on every hop, so a resize or rotation mid-climb follows the new layout.
+  function move(from, to, ms, lift) {
+    const box = track.getBoundingClientRect();
+    const [a, b] = [from, to].map((i) => {
+      const r = nodes[i].getBoundingClientRect();
+      return { x: r.left - box.left + (r.width - token.offsetWidth) / 2, y: r.top - box.top + (r.height - token.offsetHeight) / 2 };
+    });
+    // Hops arc away from the line: up when the boxes sit in a row, sideways when they stack.
+    const bend = Math.abs(b.x - a.x) < 1 ? `translateX(${lift}px)` : `translateY(${-lift}px)`;
+    return step(Promise.all([
+      token.animate([{ translate: `${a.x}px ${a.y}px` }, { translate: `${b.x}px ${b.y}px` }], { duration: ms, easing: 'cubic-bezier(.45, 0, .25, 1)', fill: 'forwards' }).finished,
+      token.animate([
+        { transform: 'none', easing: 'cubic-bezier(.2, .6, .35, 1)' },
+        { transform: bend, offset: .5, easing: 'cubic-bezier(.65, 0, .8, .4)' },
+        { transform: 'none' },
+      ], { duration: ms }).finished,
+    ]));
+  }
+
+  async function climb() {
+    if (reduced.matches) return;
+    token.hidden = false;
+    try {
+      token.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250 });
+      light(0);
+      await move(0, 0, 250, 0);
+      await pause(150);
+      for (let i = 1; i <= 2; i++) { await move(i - 1, i, 360, 26); light(i); await pause(100); }
+      token.classList.add('is-miss');
+      await step(token.animate([{ transform: 'none' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(-3px)' }, { transform: 'none' }], { duration: 300 }).finished);
+      light(-1);
+      await move(2, 0, 500, 0);
+      token.classList.remove('is-miss');
+      light(0);
+      await pause(200);
+      for (let i = 1; i <= 6; i++) { await move(i - 1, i, 300, 20); light(i); await pause(60); }
+    } catch {}
+    park();
+  }
+
+  // Turning on Reduce Motion mid-climb puts the card straight into the last box.
+  reduced.addEventListener('change', () => { if (reduced.matches && !token.hidden) park(); });
+  // An observer also reports the first sliver of overlap, so the ratio is checked here too.
+  new IntersectionObserver(([entry], observer) => {
+    if (entry.intersectionRatio < .7 && entry.intersectionRect.height < innerHeight * .45) return;
+    observer.disconnect();
+    // Let the section finish rising first, so the boxes don't move under the card.
+    setTimeout(climb, 700);
+  }, { threshold: [0, .35, .7] }).observe(track);
+})();
+</script>
+</body>
+</html>

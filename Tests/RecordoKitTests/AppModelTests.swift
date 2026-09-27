@@ -70,6 +70,13 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(QuizSession.meta(card(due: now)), "Uncategorized · Box 1")
     }
 
+    func testSyncPercentCountsFinishedChunks() {
+        XCTAssertEqual(AppModel.syncPercent(done: 0, total: 0), 0)
+        XCTAssertEqual(AppModel.syncPercent(done: 1, total: 15), 0)
+        XCTAssertEqual(AppModel.syncPercent(done: 7, total: 15), 40)
+        XCTAssertEqual(AppModel.syncPercent(done: 15, total: 15), 93)
+    }
+
     func testLastSyncText() {
         let now = date(23, 19, 42)
         XCTAssertEqual(AppModel.lastSyncText(nil, now: now, calendar: calendar), "まだ同期していません")

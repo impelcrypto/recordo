@@ -35,6 +35,17 @@ final class AppModel: ObservableObject {
         return false
     }
 
+    /// Share of chunks finished, or nil when no sync runs; the menu bar shows it beside the icon.
+    var syncPercent: Int? {
+        guard case let .syncing(done, total) = syncState else { return nil }
+        return Self.syncPercent(done: done, total: total)
+    }
+
+    // `done` is the chunk in progress (1-based), so one fewer has finished.
+    static func syncPercent(done: Int, total: Int) -> Int {
+        total > 0 ? max(done - 1, 0) * 100 / total : 0
+    }
+
     var lastSyncText: String { Self.lastSyncText(deck.lastSyncAt, now: Date()) }
 
     func start() {
@@ -86,7 +97,8 @@ final class AppModel: ObservableObject {
 
     @discardableResult
     private func presentQuiz(now: Date) -> Bool {
-        let questions = QuizSession.questions(from: deck, now: now)
+        let count = UserDefaults.standard.integer(forKey: SettingsKey.quizCount)
+        let questions = QuizSession.questions(from: deck, now: now, limit: min(max(count, 1), 10))
         guard !questions.isEmpty else { return false }
         deck.lastShownAt = now
         save()

@@ -24,9 +24,9 @@ svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round;stroke-
 
 /* ---------- desktop mock ---------- */
 .desktop{max-width:1100px;margin:0 auto;height:800px;border-radius:14px;overflow:hidden;position:relative;isolation:isolate;box-shadow:0 24px 64px #2020301a,0 2px 8px #20203012;
-  --window:#fff;--inset:#f5f5f7;--text:#1d1d1f;--secondary:#68686d;--line:#dedee3;--action:#0068d9;--selected:#e0ecfc;--success:#267843;--bad:#b3261e;--correct-face:#edf7f0;--wrong-face:#fff2f1;--scale:1}
+  --window:#fff;--inset:#f5f5f7;--text:#1d1d1f;--secondary:#68686d;--line:#dedee3;--action:#0068d9;--selected:#e0ecfc;--success:#267843;--bad:#b3261e;--correct-face:#edf7f0;--wrong-face:#fff2f1;--tertiary:#8b8b92;--scale:1}
 .desktop[data-text="200"]{--scale:2}
-.desktop[data-theme=dark]{--window:#1c1c1e;--inset:#2c2c2e;--text:#f5f5f7;--secondary:#b5b5bb;--line:#454549;--action:#0071e3;--selected:#223c59;--success:#79d794;--bad:#ff746d;--correct-face:#173c29;--wrong-face:#482321}
+.desktop[data-theme=dark]{--window:#1c1c1e;--inset:#2c2c2e;--text:#f5f5f7;--secondary:#b5b5bb;--line:#454549;--action:#0071e3;--selected:#223c59;--success:#79d794;--bad:#ff746d;--correct-face:#173c29;--wrong-face:#482321;--tertiary:#909097}
 
 .desktop-surface{position:absolute;inset:0;background:radial-gradient(120% 100% at 12% 8%,#7fa7e6 0%,#5c7fc9 32%,#3c5aa6 62%,#2a3f7c 100%)}
 .desktop[data-theme=dark] .desktop-surface{background:radial-gradient(120% 100% at 12% 8%,#3a4664 0%,#262d45 32%,#171c30 62%,#0d1020 100%)}
@@ -196,3 +196,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round;stroke-
 @keyframes menu-out{from{opacity:1}to{opacity:0}}
 .menu-dropdown.motion-enter{animation:menu-in .16s var(--ease-spring) both}
 .menu-dropdown.motion-exit{animation:menu-out .12s ease both}
+
+/* Finishing the last question: 28 quiet pieces fall once over the panel. Never under reduced motion. */
+.confetti-layer{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:.6;z-index:5}
+.confetti-piece{position:absolute;top:0;width:4px;height:8px;border-radius:1px}

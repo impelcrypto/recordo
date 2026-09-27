@@ -28,18 +28,25 @@ enum Prompts {
         """
     }
 
-    static func generate(_ questions: [Question], tags: [String]) -> String {
+    static func generate(_ questions: [Question], tags: [String], japanese: Bool) -> String {
         let known = tags.isEmpty ? "（なし）" : tags.joined(separator: "、")
         let items = questions.map { question in
             "### id \(question.id)\n質問: \(question.question)\n聞かれている用語: \(question.term)\n会話:\n\(question.context ?? "（会話の記録なし）")"
         }.joined(separator: "\n\n")
+        // An option holds about 35 English letters a line, so 90 keeps each one to about three lines in the panel.
+        let definition = japanese
+            ? "その会話の文脈での意味を日本語で60字以内。用語そのものは定義に書かない。「〜ではない」のような否定から始めない。いくつか並べるときは「・」でなく「と」や「や」でつなぐ"
+            : "その会話の文脈での意味を英語で90字以内。用語そのものは定義に書かない。「Not ...」のような否定から始めない"
+        let language = japanese ? "" : "英語で"
+        let gap = japanese ? 10 : 15
+        let stop = japanese ? "句点" : "ピリオド"
         return """
         Claude Code で作業中に聞かれた用語の復習カードを作ります。各項目の質問と、その質問をしたときの会話を読み、次を返してください。
 
         - term: 用語。会話で使われていた表記にそろえる（略語は略語のまま）
-        - definition: その会話の文脈での意味を日本語で60字以内。用語そのものは定義に書かない。「〜ではない」のような否定から始めない。いくつか並べるときは「・」でなく「と」や「や」でつなぐ
-        - tags: 分野のタグを1〜2個。既存のタグに合うものがあればそれを使う
-        - distractors: 同じ分野で紛らわしいが誤っている定義を3つ。その用語の一般的な意味や、別の場面なら正しい意味は入れない（正解が2つになるため）。長さは definition との差を10字以内にし、少なくとも1つは definition より長くする。書き方もそろえ、句点の有無と文末の言い方を definition と同じにする（長さや書き方で正解が分からないようにするため）
+        - definition: \(definition)
+        - tags: 分野のタグを\(language)1〜2個。既存のタグに合うものがあればそれを使う
+        - distractors: 同じ分野で紛らわしいが誤っている定義を\(language)3つ。その用語の一般的な意味や、別の場面なら正しい意味は入れない（正解が2つになるため）。長さは definition との差を\(gap)字以内にし、少なくとも1つは definition より長くする。書き方もそろえ、\(stop)の有無と文末の言い方を definition と同じにする（長さや書き方で正解が分からないようにするため）
         - skip: 会話の記録がなく、質問文だけでは意味が1つに決まらないときは true。そのときは他の項目を省いてよい
 
         既存のタグ: \(known)

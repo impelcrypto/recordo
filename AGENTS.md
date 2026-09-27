@@ -2,6 +2,13 @@
 
 A macOS menu bar app that quizzes you, four choices at a time, on terms you asked about in Claude Code.
 
+## Public repository
+
+This repository is public. Anyone can read what gets committed, including old commits, and removing it later means rewriting history.
+
+- Keep personal and private information out of code, comments, docs, commit messages, and fixtures. That covers names of other projects or apps (write "an earlier app" instead), absolute local paths like `/Users/<name>/...` (use `~` or a placeholder), email addresses, tokens, and anything from a real `history.jsonl`, session log, or `cards.json`.
+- Check the diff for these before committing.
+
 ## Docs
 
 - `README.md`: install and usage (for people)
@@ -11,6 +18,7 @@ A macOS menu bar app that quizzes you, four choices at a time, on terms you aske
 - `docs/superpowers/plans/2026-09-23-recordo-ui.md`: plan 2 (screens)
 - `docs/superpowers/plans/2026-09-24-recordo-cards.md`: plan 3 (card list)
 - `design/README.md`: HTML prototypes of the screens and a list of design decisions
+- `docs/index.html`: the landing page, served by GitHub Pages from `/docs` on `master`. It draws the quiz panel and the card list as HTML mockups with made-up cards, so when their English text or `Theme.swift` colors change, update the page too
 
 ## Where the code lives
 
@@ -51,7 +59,7 @@ In `Sources/RecordoKit/`:
 - Sign the `.app` with an Apple Development certificate and keep the bundle id `app.recordo`. The Full Disk Access grant is tied to both, and changing either means granting it again.
 - Write `README.md` and `AGENTS.md` in English.
 - Code comments are in English, at most two lines, and explain only why.
-- Write UI text as `tr("日本語", "English")` with both languages side by side. The user picks the language in Settings, and it defaults to Japanese. Don't translate card terms and definitions; keep them as claude wrote them.
+- Write UI text as `tr("日本語", "English")` with both languages side by side. The user picks the language in Settings. It defaults to the system language: Japanese when macOS prefers Japanese, English otherwise. Don't translate card terms and definitions; keep them as claude wrote them. New definitions follow the language setting, which `Importer` reads for each batch and passes to `Prompts.generate`.
 - When a test compares UI text, pin the language with `useLanguage(.japanese)` or similar. Other packages' tests can leave the same `appLanguage` key behind in the shared test process defaults.
 - Mark something `public` only if code outside `RecordoKit` uses it.
 - Before writing Swift for a screen, build an HTML prototype and get it approved. Use the `apple-design` skill for the prototype, and base it on `QuizStyle.swift` and the prototypes in `design/sessions/quiz/`.

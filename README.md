@@ -7,8 +7,8 @@ A macOS menu bar app that turns the terms you ask about in Claude Code into four
 1. Once a day, Recordo reads the prompts in `~/.claude/history.jsonl` added since the last sync.
 2. `claude -p` (Sonnet) picks the lines that ask what a word or abbreviation means. It drops questions about causes or how to do something, and names that only make sense inside one project.
 3. Recordo cuts the answer you actually read out of that question's session log (`~/.claude/projects/`).
-4. `claude -p` writes the term, a definition of up to 60 characters, tags, and three plausible wrong answers. Recordo saves them to `cards.json`.
-5. Every 60 seconds Recordo checks whether it may ask, and shows up to three due cards in a small panel in the bottom-right corner.
+4. `claude -p` writes the term, a definition, tags, and three plausible wrong answers in the language set in Settings. A definition is up to 60 characters in Japanese or 90 in English. Recordo saves them to `cards.json`.
+5. Every 60 seconds Recordo checks whether it may ask, and shows due cards in a small panel, three at a time by default (up to 10, set in Settings), in the bottom-right corner.
 6. A correct answer pushes the card's next review further out. A wrong answer sends it back to the start (the Leitner system).
 
 ## Requirements
@@ -27,7 +27,7 @@ make install        # build the .app, copy it to /Applications, and launch it
 make install-skill  # link the /term skill to ~/.claude/skills/term
 ```
 
-An icon appears in the menu bar. Recordo has no Dock icon. The first launch syncs the last 30 days in the background, which takes about 30 minutes. The menu shows progress like "Syncing 3/15".
+An icon appears in the menu bar. Recordo has no Dock icon. The first launch syncs the last 30 days in the background, which takes about 30 minutes. While it syncs, a percentage next to the menu bar icon shows how far along it is, and the menu says "Syncing 40%".
 
 ### Pausing during Focus
 
@@ -82,12 +82,12 @@ You can't press Quiz during a sync, and Recordo doesn't start a sync while the p
 
 | Page | Items |
 |---|---|
-| General | Language (Japanese by default), Appearance, Open Cards shortcut (⌃⌥⌘C by default) |
-| Quizzes | Quiz Interval, Quiet Hours, Focus |
+| General | Language (by default Japanese if macOS prefers Japanese, English otherwise), Appearance, Open Cards shortcut (⌃⌥⌘C by default) |
+| Quizzes | Quiz Interval, Questions per Quiz (3 by default, up to 10), Quiet Hours, Focus |
 | Sync | claude Location (leave empty to find it automatically), Last Sync |
 | About | Version, Open Data Folder (opens `~/Library/Application Support/Recordo/` in Finder) |
 
-Changing the language doesn't translate cards. Terms and definitions stay as claude wrote them.
+Changing the language doesn't translate existing cards. Cards made after the change use the new language.
 
 ## Data
 

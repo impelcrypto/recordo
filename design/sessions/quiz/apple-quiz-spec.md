@@ -28,7 +28,7 @@
 
 **discarded**（wrongで「このカードを捨てる」を押した後）— footerのleadingが「このカードを捨てる」から「捨てました　元に戻す」に置き換わる（verdict行はそのまま「✗ 不正解」＋出典）。primaryは引き続き「次へ」。確認ダイアログではなくUndoで許容する設計（apple-designスキルのAgency原則：破壊的確認は使いすぎない）。
 
-**last**（3問目を正解）— header「復習 3/3」、primaryラベルが「次へ」ではなく「閉じる」（␣マークは維持）。verdict行・footerの構成は他の回答後状態と同じ。
+**last**（3問目を正解）— header「復習 3/3」、primaryラベルが「次へ」ではなく「閉じる」（␣マークは維持）。verdict行・footerの構成は他の回答後状態と同じ。最後の問題に答えた瞬間（正誤を問わない）に、パネルの中だけで花吹雪を一度降らせる（Motion #10）。
 
 **empty-none**（0枚で「出題」）— header close(×)のみ、本文タイトル「まだカードがありません」、本文「Claude Code で用語の意味を聞くと、次の同期でカードになります。」、action row：quiet「閉じる」leading・primary「同期」trailing。
 
@@ -48,8 +48,9 @@
 
 ### 3. 設定window（`settings-window`）
 
-macOS Settings風のwindow（traffic light付きtitlebar、タイトル「Recordo 設定」、幅460px、200%時600px）。grouped formに3行：
+macOS Settings風のwindow（traffic light付きtitlebar、タイトル「Recordo 設定」、幅460px、200%時600px）。grouped formに4行：
 - 「出題の間隔」— popup button「3 時間」（native NSPopUpButton風、下向きchevron）。
+- 「1回の問題数」— popup button「3 問」（1〜10問）。モックの件数表示は「復習 N/3」のまま固定。
 - 「静かな時間帯」— ON状態のswitch＋time field「22:00」〜「9:00」。
 - 「claude の場所」— text field（placeholder「自動で探す」）と、その下に secondary行「見つかりました：~/.nvm/versions/node/v24/bin/claude」。
 
@@ -81,6 +82,7 @@ macOS Settings風のwindow（traffic light付きtitlebar、タイトル「Record
 | 8b | トグルOFF時の時刻欄 | `.time-field:disabled` の opacity(.5) | 150ms ease | 同じ | `.opacity(0.5).animation(.easeOut(duration:.15))` |
 | 8c | 出題の間隔ポップアップ押下 | 項目2と同じ press feedback | 同上 | 同上 | 同上 |
 | 9 | 空状態パネルの表示 | パネル本体は#5と同じenter、`.notice-title`/`.notice-body`はopacityで少し遅れて追いかける | 本文フェード200ms ease、.08s delay | delayなし、180ms | `.opacity(0).animation(.easeOut(duration:.18).delay(0.08))` |
+| 10 | 最後の問題に答えた（正誤を問わない） | パネル内に絶対配置の層を足し、4×8pxの片28枚（secondary・success・tertiaryの3色、層ごとopacity .6）が上端の外から下端の外へ落ちる。回転±540°、各片0〜400msずらす。層は`pointer-events:none`で「閉じる」はそのまま押せる。500ms予算の唯一の例外で、1回の出題で一度だけ | 1800ms ease-in、約2.2秒で層ごと消す | 出さない | `QuizConfetti`を`.overlay`、`.clipped()`、`.allowsHitTesting(false)` |
 
 `motion=reduce`のときはOS設定ではなくtoolbarが最終決定権を持つ：初回だけ`prefers-reduced-motion`をtoolbarの既定値として読み、以後は`data-motion`属性だけを見る（`@media`によるCSS側の常時上書きは廃止した）。toolbarの「もう一度再生」で現在の状態のenter＋revealを再生できる。
 

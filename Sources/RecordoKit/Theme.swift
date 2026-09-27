@@ -7,6 +7,7 @@ enum Theme {
     static let inset = adaptive(light: 0xF5F5F7, dark: 0x2C2C2E)
     static let text = adaptive(light: 0x1D1D1F, dark: 0xF5F5F7)
     static let secondary = adaptive(light: 0x68686D, dark: 0xB5B5BB)
+    static let tertiary = adaptive(light: 0x8B8B92, dark: 0x909097)
     static let line = adaptive(light: 0xDEDEE3, dark: 0x454549)
     static let action = adaptive(light: 0x0068D9, dark: 0x0071E3)
     static let success = adaptive(light: 0x267843, dark: 0x79D794)
